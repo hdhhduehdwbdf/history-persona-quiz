@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>你的匹配结果</title>
+<link rel="stylesheet" href="../css/common.css">
+</head>
+<body>
+<div class="phone">
+  <div id="result-body"></div>
+
+  <div id="locked-section"></div>
+
+  <div class="bottom-bar">
+    <button class="btn-primary" id="cta" onclick="goReport()">查看完整报告</button>
+    <p class="tiny" style="text-align:center;margin-top:6px;">当前开放使用 · 无需付费</p>
+  </div>
+</div>
+
+<div id="pay-host"></div>
+
+<script src="../core.js"></script>
+<script>
+ensureAnswers();
+const fig = Store.getFigure(Store.data.matchId) || FIGURES[0];
+const pct = Store.data.matchPct || 88;
+const scores = Store.data.scores || Store.calcScores();
+const sorted = Store.topDims();
+const top1 = sorted[0], top2 = sorted[1];
+const weak1 = sorted[7], weak2 = sorted[6];
+
+function renderResult() {
+  document.getElementById('result-body').innerHTML =
+  '<div style="text-align:center;padding:30px 20px 6px;" class="fade-in">' +
+    '<p class="tiny">翻完你的 24 道作答，八维比对出的"历史同类"是——</p>' +
+    '<div class="seal" style="width:76px;height:76px;font-size:36px;margin:18px auto 12px;">' + fig.name[0] + '</div>' +
+    '<h1 style="font-size:24px;">' + fig.name + ' <span style="font-size:14px;color:var(--ink2);font-weight:400;">' + fig.dynasty + '</span></h1>' +
+    '<p style="font-size:15px;color:var(--primary);font-weight:600;margin-top:6px;">匹配度 ' + pct + '%</p>' +
+    '<p class="tiny" style="margin-top:12px;">他翻完你的档案，开口第一句——</p>' +
+    '<p style="font-size:14.5px;color:var(--gold);font-weight:500;line-height:1.7;margin-top:3px;">「' + (fig.opener || '') + '」</p>' +
+    '<div style="margin-top:10px;">' + fig.tags.map(t => '<span class="chip">' + t + '</span>').join('') + '</div>' +
+  '</div>' +
+
+  /* 人物概括：三句话（新增，作为报告的预告） */
+  '<div class="card fade-in" style="margin-top:18px;background:var(--gold-soft);border-color:rgba(168,129,50,0.25);">' +
+    '<p class="section-title" style="margin:0 0 10px -2px;color:var(--gold);">人物概括 · 三句话读你</p>' +
+    (fig.summary3 || []).map((s, i) =>
+      '<p style="font-size:14px;line-height:1.8;margin-bottom:8px;">' +
+      '<span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:var(--primary);color:#fff;' +
+      'font-size:11px;text-align:center;line-height:20px;margin-right:8px;vertical-align:middle;">' + (i + 1) + '</span>' + s + '</p>').join('') +
+  '</div>' +
+
+  '<div class="card fade-in" style="text-align:center;margin-top:14px;background:var(--gold-soft);border-color:rgba(168,129,50,0.25);">' +
+    '<p class="tiny">他的心声，也是你的心声</p>' +
+    '<p style="font-size:16px;font-weight:600;color:var(--gold);margin-top:6px;">「' + fig.quote + '」</p>' +
+  '</div>' +
+  '<div class="card fade-in">' +
+    '<p class="section-title" style="margin:0 0 8px -2px;">为什么是你</p>' +
+    '<p class="muted" style="font-size:13px;">你的答题数据显示，<b style="color:var(--ink);">' + top1 + '（' + scores[top1] + '分）</b>与<b style="color:var(--ink);">' + top2 + '（' + scores[top2] + '分）</b>显著高于其他维度——这正是' + fig.name + '人格画像的核心轴。同时你的 <b style="color:var(--ink);">' + weak1 + '（' + scores[weak1] + '分）</b>也是你们共同的暗线。完整拆解见报告。</p>' +
+  '</div>' +
+  '<div style="margin:6px 16px 14px;" class="fade-in">' +
+    '<p class="section-title">完整报告共 7 章</p>' +
+    '<div class="card locked-preview" style="margin:10px 0 0;padding:12px 14px;">' +
+      ['一 · 人物匹配详情', '二 · 八维能力雷达图', '三 · 人物自画像', '四 · 共同底色拆解', '五 · 现实互动方式', '六 · 盲点与风险提醒', '七 · 成长建议']
+      .map(s => '<p style="font-size:13px;color:var(--ink2);padding:5px 0;border-bottom:0.5px solid var(--line);">' + s + '</p>').join('') +
+    '</div>' +
+  '</div>';
+  if (FREE_MODE) {
+    document.getElementById('locked-section').innerHTML =
+      '<div class="card" style="background:var(--gold-soft);border-color:rgba(168,129,50,0.25);text-align:center;">' +
+      '<p style="font-size:13px;color:var(--gold);font-weight:600;">当前开放使用</p>' +
+      '<p class="tiny" style="margin-top:4px;">完整报告无需付费查看，点击下方按钮直接进入</p></div>';
+  } else if (Store.data.paid) {
+    document.getElementById('locked-section').innerHTML = '';
+    document.getElementById('cta').textContent = '查看我的完整报告 →';
+    document.getElementById('cta').setAttribute('onclick', "go('report.html')");
+  }
+}
+function goReport() {
+  if (!FREE_MODE) { openPay(); return; }
+  Store.data.paid = true;
+  Store.data.orderId = 'FREE';
+  Store.save();
+  go('report.html');
+}
+function openPay() {
+  if (!FREE_MODE) { document.getElementById('pay-mask').classList.add('show'); return; }
+  goReport();
+}
+function closePay() { document.getElementById('pay-mask').classList.remove('show'); }
+function pay(channel) {
+  closePay();
+  Toast.show('正在唤起' + (channel === 'wechat' ? '微信' : '支付宝') + '支付…');
+  setTimeout(() => {
+    Store.pay(channel);
+    Toast.show('支付成功！订单号 ' + Store.data.orderId);
+    setTimeout(() => go('report.html'), 1000);
+  }, 1200);
+}
+if (!FREE_MODE) {
+  document.getElementById('pay-host').innerHTML =
+    '<div class="modal-mask" id="pay-mask" onclick="if(event.target===this)closePay()">' +
+    '<div class="modal">' +
+    '<div style="text-align:center;margin-bottom:16px;"><h3 style="font-size:17px;">确认订单</h3>' +
+    '<p class="tiny">完整测评报告 · 历史人物性格匹配</p>' +
+    '<p style="font-size:28px;font-weight:600;color:var(--primary);margin:8px 0;">¥0.99 <span class="price-strike" style="font-size:13px;">¥9.9</span></p></div>' +
+    '<div class="pay-option" onclick="pay(\'wechat\')"><span style="width:32px;height:32px;border-radius:6px;background:#07C160;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;">微</span><span style="flex:1;font-size:14px;">微信支付</span><span class="pay-dot"></span></div>' +
+    '<div class="pay-option" onclick="pay(\'alipay\')"><span style="width:32px;height:32px;border-radius:6px;background:#1677FF;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;">支</span><span style="flex:1;font-size:14px;">支付宝</span><span class="pay-dot"></span></div>' +
+    '</div></div>';
+}
+renderResult();
+</script>
+</body>
+</html>

@@ -1,0 +1,898 @@
+/* ===== 「你最像哪个历史人物」原型 共享数据层 ===== */
+
+const DIMS = ['决断', '共情', '开创', '洞察', '表达', '经营', '独立', '担当'];
+
+/* 上线模式开关：true = 全部功能免费开放（当前上线版本）；false = 恢复 0.99 元付费解锁 */
+const FREE_MODE = true;
+
+/* ---------- 24 道情景题（P0 题库，每选项含八维权重） ---------- */
+/* 格式：[选项文本, {维度: 权重}] */
+const QUESTIONS = [
+  { cat: '决策', q: '面对一个突发的团队危机，你会？', o: [
+    ['立刻站出来主导解决', { 决断: 3, 担当: 2 }],
+    ['先安抚大家的情绪再说', { 共情: 3, 表达: 1 }],
+    ['快速分析根因，再动手', { 洞察: 3, 决断: 1 }],
+    ['先评估风险，避免更大损失', { 经营: 2, 独立: 2, 洞察: 1 }] ] },
+  { cat: '决策', q: '一个全新领域的机会摆在面前：', o: [
+    ['直接 all in，押注进去', { 开创: 3, 决断: 2 }],
+    ['小成本试错，先验证再说', { 经营: 2, 洞察: 2, 独立: 1 }],
+    ['找懂行的人深聊一次', { 洞察: 2, 共情: 1, 表达: 1 }],
+    ['暂时观望，不瞎折腾', { 独立: 2, 经营: 1 }] ] },
+  { cat: '人际', q: '朋友深夜向你倾诉烦恼：', o: [
+    ['帮他分析问题出在哪', { 洞察: 2, 独立: 1 }],
+    ['先陪着他，听他把话说完', { 共情: 3, 表达: 1 }],
+    ['直接给建议：你该怎么做', { 决断: 2, 担当: 1 }],
+    ['讲一段自己类似的经历', { 表达: 2, 共情: 1 }] ] },
+  { cat: '压力', q: '项目 deadline 突然提前了一周：', o: [
+    ['砍需求，保核心交付', { 决断: 3, 经营: 1 }],
+    ['自己加班顶上去', { 担当: 3, 独立: 1 }],
+    ['和上级重新对齐预期', { 表达: 2, 经营: 2 }],
+    ['排优先级，再找资源支援', { 洞察: 2, 经营: 2, 担当: 1 }] ] },
+  { cat: '自我', q: '深夜复盘一天时，你想得最多的是：', o: [
+    ['今天哪里可以做得更好', { 洞察: 3, 担当: 1 }],
+    ['明天最重要的三件事', { 经营: 3, 决断: 1 }],
+    ['今天和人相处的得失', { 共情: 2, 洞察: 1 }],
+    ['离长期目标还差多远', { 开创: 2, 经营: 2 }] ] },
+  { cat: '人际', q: '有人当面质疑你的方案：', o: [
+    ['摆事实讲逻辑，说服他', { 洞察: 2, 表达: 2, 独立: 1 }],
+    ['先听他说完，再回应', { 共情: 2, 洞察: 1, 表达: 1 }],
+    ['不争辩，用结果说话', { 独立: 3, 担当: 1 }],
+    ['立刻反问他的依据是什么', { 决断: 2, 表达: 1 }] ] },
+  { cat: '决策', q: '手头多了一笔闲钱，你会：', o: [
+    ['投资自己，学点新东西', { 开创: 2, 洞察: 1 }],
+    ['稳健理财，攒着', { 经营: 3, 独立: 1 }],
+    ['给家人改善生活', { 共情: 3, 担当: 1 }],
+    ['投一个大胆的想法', { 开创: 3, 决断: 1 }] ] },
+  { cat: '协作', q: '团队里有人暗暗不服你：', o: [
+    ['找他单独深谈一次', { 共情: 2, 表达: 2 }],
+    ['用制度说话，一视同仁', { 决断: 2, 经营: 2 }],
+    ['给他一个更难的任务证明给他看', { 担当: 2, 决断: 1 }],
+    ['先观察他背后的诉求', { 洞察: 3, 共情: 1 }] ] },
+  { cat: '压力', q: '计划被打乱的那一刻，你：', o: [
+    ['快速切换到 Plan B', { 决断: 2, 开创: 2 }],
+    ['先弄清楚到底为什么乱', { 洞察: 3, 独立: 1 }],
+    ['保住最重要的部分', { 经营: 2, 担当: 2 }],
+    ['索性顺势而为', { 开创: 2, 共情: 1 }] ] },
+  { cat: '协作', q: '团队讨论突然冷场了：', o: [
+    ['抛一个尖锐的问题激活讨论', { 表达: 2, 开创: 2 }],
+    ['自己先表态，打破沉默', { 担当: 2, 表达: 1 }],
+    ['默默记下每个人的表情和顾虑', { 洞察: 3, 共情: 2 }],
+    ['会后一对一去收集意见', { 经营: 2, 独立: 1 }] ] },
+  { cat: '决策', q: '两个 offer 摆在面前，你纠结时：', o: [
+    ['列一张权重表逐项打分', { 洞察: 2, 经营: 2, 独立: 1 }],
+    ['问身边最懂行的人', { 共情: 1, 表达: 1, 独立: 1 }],
+    ['想象五年后哪个自己更舒服', { 开创: 2, 洞察: 2 }],
+    ['选钱多的，先落袋为安', { 决断: 2, 经营: 1 }] ] },
+  { cat: '人际', q: '你被误解了，你会：', o: [
+    ['当场就澄清', { 表达: 2, 决断: 1 }],
+    ['让时间证明一切', { 独立: 3, 担当: 1 }],
+    ['找共同的朋友侧面转达', { 共情: 1, 表达: 1, 经营: 1 }],
+    ['先反思自己哪里没说清楚', { 洞察: 2, 担当: 1 }] ] },
+  { cat: '协作', q: '新项目启动会上，你会先：', o: [
+    ['定里程碑，再谈愿景', { 经营: 3, 决断: 2 }],
+    ['把"为什么做"讲透', { 表达: 2, 洞察: 2 }],
+    ['把分工和责任分清楚', { 担当: 2, 决断: 1, 经营: 1 }],
+    ['先听大家的想法', { 共情: 2, 洞察: 1 }] ] },
+  { cat: '决策', q: '一个远超你目前能力的机会来了：', o: [
+    ['接下来，说服自己能行', { 开创: 3, 担当: 2 }],
+    ['评估差距，列出补齐计划', { 洞察: 2, 经营: 3 }],
+    ['拉上合伙人一起扛', { 共情: 1, 表达: 2, 经营: 1 }],
+    ['婉拒，守住自己的节奏', { 独立: 3, 经营: 1 }] ] },
+  { cat: '自我', q: '你的手机备忘录里最多的是：', o: [
+    ['待办清单', { 决断: 1, 经营: 2 }],
+    ['灵感和点子', { 开创: 3, 洞察: 1 }],
+    ['观察和反思', { 洞察: 3, 独立: 1 }],
+    ['别人说过的话和承诺', { 共情: 2, 表达: 1 }] ] },
+  { cat: '协作', q: '合作方临时变卦，你会：', o: [
+    ['立刻启动替代方案', { 决断: 3, 开创: 1 }],
+    ['先弄清对方真实的意图', { 洞察: 2, 共情: 2 }],
+    ['重新谈条件，利益绑定', { 经营: 2, 表达: 2 }],
+    ['明确追责，要求补偿', { 担当: 1, 决断: 2 }] ] },
+  { cat: '自我', q: '你觉得自己最准的一句话是：', o: [
+    ['想得比说得多', { 洞察: 2, 独立: 2 }],
+    ['做得比想得快', { 决断: 2, 开创: 2 }],
+    ['扛得比别人以为的久', { 担当: 3, 独立: 2 }],
+    ['稳得比看起来狠', { 经营: 3, 独立: 1 }] ] },
+  { cat: '人际', q: '朋友开口向你借钱：', o: [
+    ['按自己的规则借一部分', { 经营: 2, 独立: 2, 共情: 1 }],
+    ['直接借，不看用途', { 共情: 3, 担当: 1 }],
+    ['问清用途再决定', { 洞察: 2, 决断: 1 }],
+    ['婉拒，但帮他想别的办法', { 共情: 1, 表达: 1, 独立: 2 }] ] },
+  { cat: '自我', q: '一年后，你希望别人提到你时说：', o: [
+    ['"那个人很靠谱"', { 担当: 3, 经营: 2 }],
+    ['"那个人有想法"', { 开创: 3, 洞察: 1 }],
+    ['"那个人懂我"', { 共情: 3, 表达: 1 }],
+    ['"说得出，做得到"', { 决断: 2, 担当: 2 }] ] },
+  { cat: '自我', q: '学一项新技能，你的方式是：', o: [
+    ['系统学完再上手', { 洞察: 2, 经营: 2 }],
+    ['边做边学，快速迭代', { 开创: 2, 决断: 2 }],
+    ['找个师傅带着走', { 共情: 1, 表达: 1, 经营: 1 }],
+    ['先把它拆解成组成部分', { 洞察: 3, 独立: 2 }] ] },
+  { cat: '压力', q: '压力最大的时候，你会：', o: [
+    ['独自消化，不麻烦别人', { 独立: 3, 担当: 1 }],
+    ['找信任的人说出来', { 共情: 1, 表达: 2 }],
+    ['列成清单，逐个击破', { 洞察: 2, 决断: 1, 经营: 2 }],
+    ['先睡一觉再说', { 独立: 2, 共情: 1 }] ] },
+  { cat: '协作', q: '团队拿到了不错的成绩：', o: [
+    ['把功劳归于团队', { 共情: 3, 表达: 2 }],
+    ['复盘哪些动作起了作用', { 洞察: 2, 担当: 1, 经营: 2 }],
+    ['想下一步怎么放大战果', { 开创: 2, 经营: 3 }],
+    ['先奖励核心成员', { 共情: 2, 经营: 2 }] ] },
+  { cat: '决策', q: '面对不确定的未来，你倾向：', o: [
+    ['做最坏打算，留好后路', { 经营: 2, 洞察: 2, 独立: 1 }],
+    ['主动去制造一些变化', { 开创: 3, 决断: 2 }],
+    ['抓住当下能控制的', { 担当: 2, 经营: 1, 洞察: 1 }],
+    ['和重要的人一起面对', { 共情: 3, 表达: 1 }] ] },
+  { cat: '自我', q: '你觉得自己可能的短板是：', o: [
+    ['犹豫太久，错过时机', { 决断: 2, 洞察: 2 }],
+    ['想太多，显得疏离', { 共情: 2, 洞察: 2 }],
+    ['太硬，不太懂转弯', { 独立: 2, 担当: 2 }],
+    ['话少，容易被低估', { 表达: 2, 独立: 2 }] ] }
+];
+
+/* ---------- 历史人物库（首批 10 位，八维基准分 0-100） ---------- */
+const FIGURES = [
+  { id: 'zengguofan', name: '曾国藩', dynasty: '晚清', tags: ['谋定后动', '结构化拆解', '长期经营'],
+    scores: [65, 55, 45, 92, 68, 95, 80, 95],
+    quote: '结硬寨，打呆仗。天下之至拙，能胜天下之至巧。',
+    opener: '我不是聪明人，我只是把"笨"熬成了别人学不会的东西。',
+    intro: '晚清中兴名臣，以"笨功夫"成大事：不靠天赋靠体系，不靠机遇靠积累，从七次落第的普通书生，走到一人之下。',
+    self_portrait: '你不是靠灵光一现取胜的人。你的方式是：把一件难事拆成可执行的小块，一块一块啃下来。别人看到的是你的稳，你自己知道，那是无数个"想清楚再动手"的深夜。',
+    base_color: [
+      { t: '第一层底色：谋定后动', d: '你几乎从不打无准备之仗。表面上的谨慎，底层是一种对"失控"的深度防御——你必须先看清全局，才允许自己投入。' },
+      { t: '第二层底色：结构化拆解', d: '面对复杂问题，你的本能是拆：拆成阶段、拆成步骤、拆成可验证的小目标。这让你的执行极少返工，也让你偶尔显得"慢"。' },
+      { t: '第三层底色：长期主义', d: '你在意的是十年后的位置，不是这周的掌声。这份延迟满足的能力，是你最稀缺、也最容易被低估的天赋。' } ],
+    interaction: '在团队里，你不是最抢话的人，但往往是最后拍板、也最被信任的人。你习惯先听、再问、后断——宁可慢半步，也不带着模糊上路。',
+    blind_spot: '你的谨慎有时会滑向过度防御：反复推演却迟迟不动，用"准备"消化"焦虑"。',
+    risk: '在快速变化的环境里，慢半步可能就是半步之差。谨防把"想清楚"变成拖延的体面说法。',
+    suggestion: '给自己设一条"决策截止线"：想清楚或到时间，二选一先发生。小决策限时一分钟，大决策限时一天——你的洞察力足够兜底，缺的只是扣扳机的手感。',
+    summary3: [
+      '你是把"想清楚"当成行动前提的人：宁可慢一步，也不带着模糊上路。',
+      '你的竞争力不来自天赋闪光，而来自一套自己能重复执行的笨办法。',
+      '你的天花板不在能力，在扣扳机的那一下——想清楚，就动手。' ] },
+  { id: 'sushi', name: '苏轼', dynasty: '北宋', tags: ['旷达', '表达天赋', '审美力'],
+    scores: [55, 85, 80, 75, 95, 60, 85, 60],
+    quote: '一蓑烟雨任平生。',
+    opener: '被贬三次还能写千古名篇——你的心态，是我认输。',
+    intro: '北宋全才，诗书画三绝。一生三起三落，却把每一次贬谪都过成了名场面：黄州有东坡肉，惠州有荔枝。',
+    self_portrait: '你有一种把苦日子过出滋味的能力。同样的挫折，别人内耗，你消化——你总能找到一个角度，让眼前的困境变成可以讲述的故事。',
+    base_color: [
+      { t: '第一层底色：情绪复原力', d: '你的内核有弹性。跌倒之后，你的第一反应不是"为什么是我"，而是"这一段怎么过得有意思"。' },
+      { t: '第二层底色：表达即治愈', d: '你习惯用输出处理输入——说出来、写下来，情绪就有了出口。表达对你不是表演，是自救。' },
+      { t: '第三层底色：审美自救', d: '你相信具体的生活能对抗抽象的焦虑：一顿饭、一段路、一个具体的小目标。' } ],
+    interaction: '你是人群里的润滑剂和气氛锚点。别人愿意向你倾诉，因为你从不急着评判。',
+    blind_spot: '你擅长消解问题，有时也因此延迟解决它——"想开了"不等于"解决了"。',
+    risk: '用豁达遮掩回避、用幽默稀释冲突，问题会在看不见的地方慢慢堆积。',
+    suggestion: '每周留一小时"不带滤镜复盘"：只写问题本身，不写安慰自己的话。',
+    summary3: [
+      '你有把苦日子过出滋味的能力：挫折到你手里，会先变成一个能讲的故事。',
+      '你靠表达消化情绪，说出来、写下来，一件事才算真正过去。',
+      '你最该防的，是把"想开了"当成"解决了"。' ] },
+  { id: 'wuzetian', name: '武则天', dynasty: '唐', tags: ['掌控', '决断', '大格局'],
+    scores: [95, 45, 90, 85, 85, 80, 95, 80],
+    quote: '身居低位时积攒的实力，才是高位上唯一的底气。',
+    opener: '你缺的不是能力，是有人敢给你一块无字碑。',
+    intro: '中国历史上唯一的女皇帝。从才人到帝王，用数十年隐忍与布局，改写了游戏规则本身。',
+    self_portrait: '你对局势有天然的嗅觉——谁在影响谁、风向在哪边、什么时候该出手。你不喜欢被动等结果，你更愿意成为定义规则的人。',
+    base_color: [
+      { t: '第一层底色：掌控源于安全感', d: '你需要"局面在自己手里"的确定感。这不是控制欲发作，是你对抗不确定性的方式。' },
+      { t: '第二层底色：目标极其清晰', d: '你的时间刻度是五年、十年。为了长期目标，你受得住短期的委屈和误解。' },
+      { t: '第三层底色：决断即担当', d: '每个决定都需要有人签字——你宁可错在自己手里，也不愿把命运交给别人的犹豫。' } ],
+    interaction: '你说话有分量，不是靠嗓门，而是每次都说到点子上。',
+    blind_spot: '高压之下，你容易把人当变量处理，忽略情绪成本。',
+    risk: '身边人会习惯性顺从你——时间久了，你会听不到真话。',
+    suggestion: '每季度做一次"谁在迁就我"盘点，主动约一位敢反对你的人，复盘一次你的决策。',
+    summary3: [
+      '你对局势有天然的嗅觉：先看清牌面，再决定出哪张，很少盲出。',
+      '你需要"局面在自己手里"的确定感，为此能忍很长的忍耐期。',
+      '你要防的不是对手，是身边的人越来越不敢对你说真话。' ] },
+  { id: 'zhugeliang', name: '诸葛亮', dynasty: '三国', tags: ['洞察', '谋略', '担当'],
+    scores: [75, 65, 60, 95, 80, 85, 70, 95],
+    quote: '非淡泊无以明志，非宁静无以致远。',
+    opener: '事必躬亲不是病，是你的执念。看过我五丈原就知道。',
+    intro: '卧龙先生，隆中对定三分天下。以近乎全知般的推演能力和"鞠躬尽瘁"的责任感，成为千年丞相的标杆。',
+    self_portrait: '你是典型的"谋定后动"型，但比同类更进一步：你不只想清楚，你还愿意为结果负全责。别人眼里你运筹帷幄，只有你知道背后推演了多少遍。',
+    base_color: [
+      { t: '第一层底色：全局推演', d: '做任何事之前，你的大脑已经在沙盘上跑过一遍。这让你的判断准确率高，也让你在信息不足时格外煎熬。' },
+      { t: '第二层底色：责任内化', d: '出了问题，你的第一反应是"我哪里没算到"，而不是"谁的错"。这是你被信任的根源，也是你疲惫的来源。' },
+      { t: '第三层底色：克制的理想主义', d: '你心里有很理想的图景，但你清楚：理想要靠一件件现实的小事铺过去。' } ],
+    interaction: '你习惯做那个兜底的人：重要的事交给别人会不安，最后常常自己扛。',
+    blind_spot: '什么都自己扛，团队永远长不大；标准太高，别人跟你共事容易有挫败感。',
+    risk: '亲力亲为的上限，就是你的体力上限。',
+    suggestion: '选一件 70 分的事放手给别人，把省下的精力投到你真正不可替代的那件事上。',
+    summary3: [
+      '你的大脑习惯先在沙盘上跑一遍，才允许自己真正投入。',
+      '出了问题你先问"我哪里没算到"，而不是"谁的错"——这是你被信任的原因，也是你疲惫的原因。',
+      '你的上限是体力不是能力：该放手的那件事，越早放越好。' ] },
+  { id: 'wangyangming', name: '王阳明', dynasty: '明', tags: ['心学', '知行合一', '洞察'],
+    scores: [80, 75, 85, 95, 85, 70, 90, 75],
+    quote: '此心光明，亦复何言。',
+    opener: '你缺的不是答案，是敢信自己的那一下。',
+    intro: '心学宗主，立功立德立言。被贬龙场反而悟道：一切答案向内求，在事上磨练。',
+    self_portrait: '你有一个强大的内在评价系统。外界的标准会影响你，但最终拍板的，永远是你自己反复确认过的那套"我认为对"。',
+    base_color: [
+      { t: '第一层底色：向内求', d: '遇到问题，你先问自己的判断依据，而不是先找外部参照。这让你独立，也让你偶尔孤独。' },
+      { t: '第二层底色：知行合一', d: '你很难忍受"懂了但做不到"——对你来说，没落地的道理不算真的懂。' },
+      { t: '第三层底色：事上磨练', d: '你把每个难题都当成修炼材料，这份转化能力让你越挫越稳。' } ],
+    interaction: '你不太争辩，但也很难被说服——除非对方讲到了你认可的道理上。',
+    blind_spot: '过度向内，容易低估外部资源的杠杆作用。',
+    risk: '"我自己想明白了就行"会让合作者觉得难以进入你的世界。',
+    suggestion: '每月做一次"借力实验"：主动把一件事的核心环节交给别人，观察结果是否真的变差。',
+    summary3: [
+      '你心里有一套自己反复确认过的标准，外界的声音只是参考。',
+      '你受不了"懂了但做不到"：没落地的道理，在你这里不算真懂。',
+      '你越向内求，越容易低估别人愿意借给你的力。' ] },
+  { id: 'libai', name: '李白', dynasty: '唐', tags: ['才华', '自由', '开创'],
+    scores: [40, 60, 95, 70, 95, 20, 95, 40],
+    quote: '天生我材必有用，千金散尽还复来。',
+    opener: '别人卷仕途，你卷月亮。挺好，就是别喝我的酒。',
+    intro: '诗仙。一生浪游，不事权贵（虽然试过），用想象力把大唐的天空撑到了最高。',
+    self_portrait: '你的能量是发散型的：点子多、起步快、对新鲜事物的兴奋度远超常人。规则对你更像参考线，不是墙。',
+    base_color: [
+      { t: '第一层底色：表达即存在', d: '你有强烈的"必须说出来、做出来"的冲动。压着表达，你就枯萎。' },
+      { t: '第二层底色：自由高于安稳', d: '安稳的性价比对你不高，你宁可要一条难走但属于自己的路。' },
+      { t: '第三层底色：情绪即燃料', d: '你的高低起伏是双刃剑——低谷时难熬，但高峰期的创造力也来自这里。' } ],
+    interaction: '你容易点燃别人，也容易在执行阶段让别人接不住。',
+    blind_spot: '兴趣衰减快于项目周期：起势之后能不能收尾，是你的分水岭。',
+    risk: '才华让你起步容易，长期主义才是你真正的稀缺品。',
+    suggestion: '同一时间只保留一条主线，把灵感记进"停车场"，三个月后再看还想不想做。',
+    summary3: [
+      '你的能量是发散型的：点子多、起步快、对新鲜事物的兴奋度远超常人。',
+      '你需要表达——压着不说，你就枯萎。',
+      '兴趣比项目周期短是你的分水岭：把灵感停进停车场，三个月后再看还想不想做。' ] },
+  { id: 'caocao', name: '曹操', dynasty: '三国', tags: ['枭雄', '决断', '务实'],
+    scores: [90, 50, 90, 85, 90, 75, 85, 70],
+    quote: '老骥伏枥，志在千里。',
+    opener: '乱世看什么？看你敢不敢拍板。你拍得比我当年还快。',
+    intro: '治世之能臣，乱世之枭雄。白手起家，在废墟上重建秩序，把"结果导向"刻进了骨头。',
+    self_portrait: '你是结果导向的极致：目标一旦锁定，路径、情绪、面子都可以是变量。你的世界里没有"太难"，只有"值不值"。',
+    base_color: [
+      { t: '第一层底色：利益结构思维', d: '你看局面先看结构：谁需要什么、谁能让步什么。共情你并非没有，只是排在使用价值之后。' },
+      { t: '第二层底色：敢赌也敢输', d: '你在关键节点有超常的下注勇气，并且输得起——这是大多数人做不到的。' },
+      { t: '第三层底色：实用主义审美', d: '好看但不解决问题的东西，你天然免疫。' } ],
+    interaction: '你直接，甚至显得锋利。但跟你共事的人都知道：你对事不对人，且从不虚与委蛇。',
+    blind_spot: '快节奏下容易低估人心成本——赢下局面，输掉关系。',
+    risk: '你的"直接"在信任建立之前，容易被误读为攻击。',
+    suggestion: '重要关系里，把"这件事你怎么看"换成"你最近怎么样"。先存感情，再谈利益。',
+    summary3: [
+      '你是结果导向的极致：目标一旦锁定，路径、情绪、面子都可以是变量。',
+      '你敢赌，也输得起——这一点大多数人做不到。',
+      '你赢下局面的速度，快过建立信任的速度；慢半拍，关系才跟得上你。' ] },
+  { id: 'liqingzhao', name: '李清照', dynasty: '宋', tags: ['细腻', '审美', '洞察'],
+    scores: [55, 80, 75, 85, 90, 50, 80, 65],
+    quote: '生当作人杰，死亦为鬼雄。',
+    opener: '细腻不是柔弱，是我赌上全部身家的底气。',
+    intro: '千古第一才女。婉约词宗，却有金石般的硬骨：乱世里押上全部身家守护所爱之物。',
+    self_portrait: '你对细节的感知力是天赋级的：一句话的语气、一个气氛的微妙变化，你都接得住。这份敏感让你的表达有穿透力，也让你的内心戏比外人看到的多得多。',
+    base_color: [
+      { t: '第一层底色：高敏感高审美', d: '你接收到的世界比别人细腻一层。这既是创作力，也是消耗源。' },
+      { t: '第二层底色：柔中带刚', d: '别被你的温和骗了——触及底线时，你的坚决超过大多数"强势"的人。' },
+      { t: '第三层底色：表达即整理', d: '你通过书写和言说理解自己。不表达的日子，情绪会淤积。' } ],
+    interaction: '你偏爱深度的、一对一的连接，不擅长也不喜欢泛泛的社交。',
+    blind_spot: '对情绪信号的过度接收，会让你在冲突后反刍很久。',
+    risk: '把"被理解"设为合作前提，会筛掉很多本可共赢的人。',
+    suggestion: '给反刍设时限：情绪事件发生 24 小时内处理或放下，超时即翻篇。',
+    summary3: [
+      '你对细节的感知是天赋级的：一句话的语气、一个气氛的变化，你都接得住。',
+      '你的温和是真的，骨头也是真的——触碰底线时，你比"强势"的人更坚决。',
+      '你不表达，情绪就会淤积：给反刍设时限，是你最划算的自救。' ] },
+  { id: 'guanzhong', name: '管仲', dynasty: '春秋', tags: ['经营', '制度化', '格局'],
+    scores: [80, 70, 75, 90, 85, 95, 70, 80],
+    quote: '仓廪实而知礼节，衣食足而知荣辱。',
+    opener: '别喊口号，先谈钱——把账算明白的合作才走得远。',
+    intro: '华夏第一相。不靠道德感召，靠机制设计让齐国九合诸侯——把人性真实动机变成系统的设计师。',
+    self_portrait: '你看问题看系统：一件事做不成，你的第一反应不是"谁不努力"，而是"机制哪里缺了一环"。这让你天生适合做架构、做经营、做规则设计。',
+    base_color: [
+      { t: '第一层底色：系统思维', d: '你习惯把人和事放进结构里理解，相信好的机制能让平凡人做出不平凡的事。' },
+      { t: '第二层底色：利益即语言', d: '你尊重人性里的真实动机，擅长设计让多方都受益的合作结构，而不是靠情怀硬撑。' },
+      { t: '第三层底色：务实的理想主义', d: '你的理想有落地路径图。你从不让情怀替你付账。' } ],
+    interaction: '你是天生的协调者和规则制定者。谈判桌和复盘会，是你最自如的战场。',
+    blind_spot: '过度相信机制，低估非理性因素——人和事的弹性，有时比设计更重要。',
+    risk: '"讲清楚就能合作"的假设，在情绪主导的场景会失效。',
+    suggestion: '留 20% 的精力给"讲不通道理但重要"的人和事——那是系统之外的真实世界。',
+    summary3: [
+      '一件事做不成，你先看机制缺了哪一环，而不是谁不够努力。',
+      '你尊重人性里的真实动机，擅长把多方的利益设计成同一个方向。',
+      '"讲清楚就能合作"是你的假设，也是你在情绪场景里最常失效的地方。' ] },
+  { id: 'shangguanwaner', name: '上官婉儿', dynasty: '唐', tags: ['洞察', '表达', '分寸感'],
+    scores: [70, 75, 65, 88, 90, 80, 75, 70],
+    quote: '真正的安全感，来自别人拿不走的能力。',
+    opener: '局面比人复杂：话到嘴边留三分，三分之外看场合。',
+    intro: '巾帼宰相。以一介女流在权力中枢行走数十年，靠的不是背景，是称量天下才士的笔。',
+    self_portrait: '你擅长在复杂的局面里找到自己的位置：知道什么话该说、说到几分、对谁说。这份分寸感不是天生的世故，是你观察和复盘换来的生存智慧。',
+    base_color: [
+      { t: '第一层底色：局势阅读力', d: '你能同时看见明线与暗线——桌上说的，和桌下想的。' },
+      { t: '第二层底色：以才立身', d: '环境不可靠时，你把安全感押在自己的能力上。这是你最硬的底气。' },
+      { t: '第三层底色：克制表达', d: '你说话有分寸，但分寸之下藏着很强的主见。' } ],
+    interaction: '你是复杂关系里的翻译官和稳定器，各方都愿意跟你说真话。',
+    blind_spot: '太会照顾局面，容易把自己的需求排到最后。',
+    risk: '长期"得体"，会让你忘记自己真正想要什么。',
+    suggestion: '每周给自己一次"不考虑任何人观感"的表达练习：这一刻你想要什么，直说。',
+    summary3: [
+      '你能同时看见明线和暗线：桌上说的，和桌下想的。',
+      '你把安全感押在自己拿不走的能力上，这是你最硬的底气。',
+      '你太会照顾局面，容易把自己的需求排到最后——记得给自己留一个位置。' ] },
+
+  /* ---------- 第二批：中外特出名人物 10 位 ---------- */
+  { id: 'qinshihuang', name: '秦始皇', dynasty: '秦', tags: ['铁腕', '标准化', '大工程'],
+    scores: [95, 32, 92, 80, 58, 75, 90, 72],
+    quote: '朕为始皇帝。后世以计数，二世三世至于万世。',
+    opener: '六国我都敢横扫，你那点破事算什么？说，哪个还没拆？',
+    intro: '史上第一位把"统一"当 KPI 的人：书同文、车同轨、度量衡一锅端。争议吵了两千年，但他顺手发明了"标准件"这个词的祖版。',
+    self_portrait: '你是"大工程"型选手：目标一立，路径、杂音、休息日都可以省略。别人还在论证可行性，你已经在画终点线了。',
+    base_color: [
+      { t: '第一层底色：大目标驱动', d: '你天然被"大事"吸引：小事提不起劲，大事睡不着。你的兴奋度和目标的重要性成正比。' },
+      { t: '第二层底色：标准化洁癖', d: '同一件事有三种做法，你会失眠到研究出第四种"唯一正确"的。这份执念能造出长城，也能造出加班。' },
+      { t: '第三层底色：敢押上全部', d: '你的打法是把筹码全推上桌：要么大赢，要么留下巨型烂尾楼——好在你的胜率不低。' } ],
+    interaction: '你习惯定标准而不是商量：给团队一个明确的规格，比给十句鼓励更让你安心。',
+    blind_spot: '速度太快时，你听不进"减速"的声音——历史上真有人为此把书都烧了。',
+    risk: '极致的统一带来极致的单点故障：你一旦错，就是系统性、全流程地错。',
+    suggestion: '给自己修一条"直道"之外的小路：每月认真听一次反对意见，不辩解，只记录。',
+    summary3: [
+      '你的兴奋度和目标大小成正比：小事催眠，大事失眠。',
+      '你受不了"三种做法并存"：不统一成一种，你睡不着。',
+      '你赢在敢押全部，也险在没人拦得住你——留一个敢踩刹车的人在身边。' ] },
+  { id: 'lishimin', name: '李世民', dynasty: '唐', tags: ['纳谏', '用人', '格局'],
+    scores: [88, 72, 78, 90, 85, 85, 68, 88],
+    quote: '以铜为镜，可以正衣冠；以人为镜，可以明得失。',
+    opener: '魏征怼了我两百次，我还得夸他怼得好——你被怼一句就内耗三天？',
+    intro: '天可汗，贞观之治的主角。武力值满点却最爱听批评，开创了"老板求骂"的职场先河。',
+    self_portrait: '你强，但你的强不在"从不出错"，而在"错了改得比谁都快"。你容得下唱反调的人，因为你清楚：他要的也是赢。',
+    base_color: [
+      { t: '第一层底色：自信但不自闭', d: '你的底气来自实战：真正打赢过，就知道输一局不致命。所以你听得进反对，不怕被证明错了。' },
+      { t: '第二层底色：把人才当资产', d: '你评估一个人，先看"能干什么"，再看"跟过谁"。恩怨归恩怨，位置归位置。' },
+      { t: '第三层底色：对结果有洁癖', d: '你能接受过程狼狈，不能接受结果平庸。这是你的底线，也是你的引擎。' } ],
+    interaction: '你带团队的画风是"放权+抽查"：规则你定，细节他们填，但账本你都会翻。',
+    blind_spot: '你的自信偶尔会切换成"我说了算"——有些决定，你确实没跟所有人商量。',
+    risk: '敢说真话的人是被你的反应喂大的：你炸一次，身边就少一个魏征。',
+    suggestion: '固定一个"反对席"：重要决策前，指定一人专唱反调，唱完才允许通过。',
+    summary3: [
+      '你的强不在"从不出错"，在"错了改得比谁都快"。',
+      '你把敢唱反调的人当资产，因为他们和你一样想赢。',
+      '你要防的是自己的反应：炸一次，身边就少一个敢说真话的人。' ] },
+  { id: 'chengjisihan', name: '成吉思汗', dynasty: '蒙古帝国', tags: ['扩张', '目标感', '铁律'],
+    scores: [92, 45, 96, 78, 55, 70, 88, 68],
+    quote: '要让青色苍狼的子孙，记住我们到过的远方。',
+    opener: '地图对我来说从来不够大——你的目标，是不是也一样小？',
+    intro: '从草原孤儿到史上陆地第一帝国缔造者。别人扩张靠运气，他扩张靠制度：千户制、驿站、成文法，一样不少。',
+    self_portrait: '你是"视野型"野心家：真正吸引你的不是赢，是没去过的远方。你受不了原地踏步——那对你等于慢性窒息。',
+    base_color: [
+      { t: '第一层底色：远方驱动', d: '安分对你不是美德，是刑期。你的人生刻度，按"下一个目标"计算。' },
+      { t: '第二层底色：规矩极简且极硬', d: '你不立复杂的制度，但立了就绝不破。红线清楚，团队反而跑得快。' },
+      { t: '第三层底色：用人破格', d: '你提拔人不问出身，只问战绩。这条标准放今天，能救活一半的大公司。' } ],
+    interaction: '你带队伍像牧马：给方向、给水草、给底线，其余时间不盯着。',
+    blind_spot: '扩张太快时，后勤和人心跟不上——战线越长，越是在靠惯性跑。',
+    risk: '你把"能打"当核心能力，但组织的崩塌，从来不是从战场上开始的。',
+    suggestion: '每开拓一条新战线，同步设一条"止盈线"：到点就收，先消化，再前进。',
+    summary3: [
+      '你的人生刻度按"下一个目标"计算，原地踏步对你等于窒息。',
+      '你的规矩极简但极硬：红线清楚，团队反而跑得快。',
+      '战线越长越靠惯性——扩张之前，先给自己画一条止盈线。' ] },
+  { id: 'kongzi', name: '孔子', dynasty: '春秋', tags: ['仁', '因材施教', '担当'],
+    scores: [60, 92, 66, 90, 92, 62, 78, 92],
+    quote: '知其不可而为之。',
+    opener: '别发长语音了，讲故事吧——两千年前我就验证过，故事比道理管用。',
+    intro: '史上最强"人际关系学"宗师：把"好好说话、好好带人"研究到了底层。周游列国十四年，简历难看，学生千古。',
+    self_portrait: '你相信一切问题最终是"人"的问题：事办砸了，先看人顺没顺；人顺了，事就顺了。你对人的耐心，大到近乎固执。',
+    base_color: [
+      { t: '第一层底色：共情是方法论', d: '你的体贴不是性格软，是精密技术：你听得出一句话背后没说出口的那半句。' },
+      { t: '第二层底色：因材施教', d: '同一个问题，你给不同人的答案不一样——你要的不是标准答案，是把每个人点亮。' },
+      { t: '第三层底色：知其不可而为之', d: '你早就看清了世道，但看清之后依然选择认真。这是你身上最贵的部分。' } ],
+    interaction: '你是人群里的"定海针"：吵得再凶的局，你说一句话，大家就愿意坐回来。',
+    blind_spot: '共情是天赋也是债：你把别人的情绪接过来，忘了自己也要卸货。',
+    risk: '太替别人着想，会让你在该立规矩的场合手软——边界拖久了，成本翻倍。',
+    suggestion: '每月做一次"课题分离"练习：分清哪些是你的事，哪些只是你在意的人的事。',
+    summary3: [
+      '你听得出一句话背后没说的那半句——共情对你是方法论，不是性格软。',
+      '你信"人顺了事就顺"，对人的耐心大到近乎固执。',
+      '看清了还愿意做，是你最贵的部分；记得也给自己留一份体谅。' ] },
+  { id: 'yuefei', name: '岳飞', dynasty: '南宋', tags: ['赤诚', '硬核', '担当'],
+    scores: [86, 68, 58, 68, 72, 46, 74, 98],
+    quote: '莫等闲，白了少年头，空悲切。',
+    opener: '我背上刻着四个字，你屏幕上每天飘着八个：再玩一会。',
+    intro: '南宋最强战力：治军严到"冻死不拆屋，饿死不掳掠"，填词又能豪到"八千里路云和月"。一头纯粹到发光的担当机器。',
+    self_portrait: '你是"扛事型"人格：天塌下来的第一反应不是躲，是顶。别人夸你靠谱，其实你只是见不得事情砸在自己手里。',
+    base_color: [
+      { t: '第一层底色：担当是本能', d: '团队出事时你先站出来，不是觉悟高，是你受不了"所有人都在干看"的那个瞬间。' },
+      { t: '第二层底色：纯粹到不设防', d: '你的世界里黑白分明：该做的事、该护的人。这份纯粹是你战斗力的来源，也是你吃过的亏。' },
+      { t: '第三层底色：恨铁不成钢', d: '你对自己狠，对同伴的标准也高——有时狠得让人误会是挑剔。' } ],
+    interaction: '你是大家遇到难题时第一个想到的名字；但你自己遇到难处，倾向于一个人扛。',
+    blind_spot: '把"扛"当默认设置，会让你身边的人永远学不会分担。',
+    risk: '最硬的担当配最软的防备：你防得住明面上的敌人，防不住背后的算计。',
+    suggestion: '每周留一件"不扛"的事：明确说"这次我不兜底"，看看天塌不塌。',
+    summary3: [
+      '天塌下来你先顶上，不是觉悟高，是受不了所有人干看着。',
+      '你的纯粹是战斗力，也是你吃过最大的亏。',
+      '该说"这次不归我"时就说：你扛住的天，得给别人一个学着撑的机会。' ] },
+  { id: 'dafenqi', name: '达·芬奇', dynasty: '意大利·文艺复兴', tags: ['好奇', '跨界', '完美主义'],
+    scores: [45, 66, 96, 98, 78, 40, 92, 58],
+    quote: '简单，是终极的复杂。',
+    opener: '我笔记里躺着七千页没写完的点子——你收藏夹里那些"稍后读"，我认了。',
+    intro: '人类史上最出名的"斜杠"：画家/解剖学家/工程师/发明家……什么都想学，什么都想拆开看看。蒙娜丽莎画了十几年，完美主义实锤。',
+    self_portrait: '你的大脑装着一台永不停机的显微镜：看什么都想拆开看原理。别人满足于"会用了"，你非得知道"为什么是它"。',
+    base_color: [
+      { t: '第一层底色：好奇心优先', d: '兴趣是你的第一生产力，也是你的日程表——你很难对"没意思的事"假装投入。' },
+      { t: '第二层底色：跨界是本能', d: '你的知识是网状的不是线状的：一个领域的问题，你常常从另一个领域找到答案。' },
+      { t: '第三层底色：完美主义陷阱', d: '"再改一点"是你的口头禅。作品没交，往往不是没做完，是你还不满意。' } ],
+    interaction: '你是讨论会上最危险的提问者：你一问"为什么"，整套流程就得重讲一遍。',
+    blind_spot: '开的多，收的少：项目排队的长度，永远大于你的生产一口气。',
+    risk: '好奇心不加围栏，会让你什么都懂一点、什么都差一口气。',
+    suggestion: '给自己立"交卷日"：哪怕 80 分也先发布，把"再改一点"留给下一版。',
+    summary3: [
+      '你的大脑是台永不停机的显微镜，看什么都想拆开看原理。',
+      '跨界不是你的技能，是你的本能：答案常常在另一个领域。',
+      '你最该防的是"再改一点"——先交卷，完美留给下一版。' ] },
+  { id: 'napolun', name: '拿破仑', dynasty: '法兰西第一帝国', tags: ['决断', '效率', '强者意识'],
+    scores: [96, 42, 85, 82, 88, 78, 86, 82],
+    quote: '不想当将军的士兵，不是好士兵。',
+    opener: '机会我从来不等——我直接造一个。你的"等准备好"，打算等到几岁？',
+    intro: '从科西嘉小贵族到欧洲搅局者：靠炮兵专业能力上位，顺便把民法典和一堆制度革新打包送给了半个欧洲。',
+    self_portrait: '你信奉"先上桌，再学规则"：机会窗口只有几天，没时间把准备做完——所以你边打边学，用速度换生存空间。',
+    base_color: [
+      { t: '第一层底色：决断力即权力', d: '在没人拍板的时刻站出来拍板，是你给自己攒信用的方式。' },
+      { t: '第二层底色：目标倒推路径', d: '你先定"要什么"，再倒推"缺什么"——清单式前进，很少被情绪带偏。' },
+      { t: '第三层底色：强者意识', d: '你相信局面是抢出来的：谦虚当然好，但桌上没人让座，你就自己拉椅子。' } ],
+    interaction: '你说话自带目标感，闲聊对你像不必要的支出——同事觉得你效率高，也觉得你有点冲。',
+    blind_spot: '连胜会喂大"我从不失误"的错觉——而雪崩发生在所有人都信你的那一刻。',
+    risk: '树敌速度和推进速度成正比：你跑得越快，追兵越多。',
+    suggestion: '给每个大目标配一个"反方参谋"：专门计算你正在透支什么。',
+    summary3: [
+      '没人拍板时你第一个站出来，你的信用是靠决断攒出来的。',
+      '你先定"要什么"再倒推"缺什么"，情绪很少能带偏你。',
+      '你推进的速度和树敌的速度一样快——给自己留退路，也留一份警觉。' ] },
+  { id: 'qiujiier', name: '丘吉尔', dynasty: '英国', tags: ['表达', '韧性', '大局观'],
+    scores: [84, 58, 66, 86, 98, 60, 86, 92],
+    quote: '成功不是终点，失败也非末日：重要的是继续前进的勇气。',
+    opener: '我被选下去又选回来，中间还写了六百万字——你失败一次就想退群？',
+    intro: '一天抽八支雪茄，顺便带领国家扛过至暗时刻。人生信条：台词比弹药先到位。',
+    self_portrait: '你是"逆风局"选手：局面越难，你的表达欲和斗志越旺。顺境时你偷懒，逆境时你发光。',
+    base_color: [
+      { t: '第一层底色：语言即武器', d: '你深知人心是靠话语动员的。你会为一句关键发言，打十遍草稿。' },
+      { t: '第二层底色：韧性超常', d: '你被否决、被边缘化过很多次，但每次都当自己是"暂时下课"，不是"永久退场"。' },
+      { t: '第三层底色：直觉型大局观', d: '数据没到位，你已经闻到风向不对了——事后看，你的嗅觉常常是对的。' } ],
+    interaction: '你是冷场终结者和士气发动机：有你在的会议室，没人敢说"这事办不成"。',
+    blind_spot: '太爱打仗的思维，容易把合作也当战役打——赢了辩论，输了盟友。',
+    risk: '情绪高浓度输出，对你是燃料，对旁人可能是爆炸。',
+    suggestion: '把"必须赢"的场景列出来，看看哪几个其实只需要"参与"——不用每场都上刺刀。',
+    summary3: [
+      '局面越难你越亮：顺境偷懒，逆境发光，是你的出厂设置。',
+      '你为一句关键发言肯打十遍草稿——语言对你从来是武器，不是装饰。',
+      '你把一切都当战役打：赢了辩论的那次，往往顺手输掉了盟友。' ] },
+  { id: 'aiyinsitan', name: '爱因斯坦', dynasty: '德国·美国', tags: ['深度', '想象', '独立'],
+    scores: [50, 70, 94, 96, 72, 35, 95, 62],
+    quote: '想象力比知识更重要。',
+    opener: '我头发乱，是因为没空想发型。你今天的大脑，认真想正经事了吗？',
+    intro: '专利局小职员兼职颠覆物理学：上班想出相对论，顺手把"时间"改成了可弯的。史上最强"体制内副业选手"。',
+    self_portrait: '你有一套自己的思考顺序：先怀疑共识，再自己从头推一遍。别人用"大家都这么认为"省时间，你偏要用推演换确定性。',
+    base_color: [
+      { t: '第一层底色：第一性思考', d: '你不接受"因为书上这么说"。每个概念都要在你脑内重新推一遍，才算数。' },
+      { t: '第二层底色：思想实验成瘾', d: '你习惯在脑子里跑极端场景：追光、电梯、同时性——想象力的风洞是你的日常。' },
+      { t: '第三层底色：淡泊社会化指标', d: '头衔、排面、人脉，你都有，但从不为它们调整自己的步调。' } ],
+    interaction: '你聊得起的都是"问题本身"，寒暄对你像走弯路——熟人知道这是专注，不熟的人以为你心不在焉。',
+    blind_spot: '推演太久容易错过行动窗口：世界不会等你把公式推导完。',
+    risk: '与世隔绝的深度，会让你错过"外行一句话点醒你"的运气。',
+    suggestion: '每周约一个非同行聊天：把你的问题讲成外行能懂的故事，卡点常常自己冒出来。',
+    summary3: [
+      '你不接受"书上这么说"，每个概念都要在脑内重新推一遍才算数。',
+      '你在脑子里跑思想实验：想象力的风洞，是你的日常工具。',
+      '深度是你的护城河也是你的隔离墙——留一条缝，让外行的一句话点醒你。' ] },
+  { id: 'shashibiya', name: '莎士比亚', dynasty: '英国·文艺复兴', tags: ['共情', '表达', '人性洞察'],
+    scores: [55, 95, 82, 92, 98, 50, 70, 62],
+    quote: '生存还是毁灭，这是一个问题。',
+    opener: '人间是座大舞台——你猜我写的是剧本，还是弹幕？',
+    intro: '把人性的全部菜单写成三十多部戏的男人：嫉妒、野心、暗恋、复仇……你说过的每句狠话，他四百年前都替角色说过了。',
+    self_portrait: '你对人心的库存量大得吓人：一个人一个眼神，你已经把他的动机、软肋和接下来的台词都排好了。这不是腹黑，是职业素养。',
+    base_color: [
+      { t: '第一层底色：人心是素材库', d: '你观察人不带评判，带笔记本。再不堪的动机，你也先理解，再写它。' },
+      { t: '第二层底色：共情宽度惊人', d: '你能钻进任何一个人的皮囊里说话——包括你讨厌的那些。' },
+      { t: '第三层底色：表达欲过剩', d: '你脑子里同时开着十几个频道，不让它们发声，你会难受。' } ],
+    interaction: '你聊天像即兴演出：接梗快、隐喻多，跟你说话的人常常不知道自己已经被你写进素材了。',
+    blind_spot: '看人太透，容易提前给对方"判词"，失去被惊喜的机会。',
+    risk: '把什么都当戏剧处理，关键时刻可能用台词代替行动。',
+    suggestion: '每周挑一个"不解读日"：只观察，不下判词——留一点位置给意外。',
+    summary3: [
+      '你观察人不带评判，带笔记本：动机、软肋、下一句台词，全在你库里。',
+      '你能钻进任何人的皮囊说话，包括你讨厌的那些。',
+      '看人太透会让你提前下判词——留一点位置给惊喜。' ] }
+];
+
+/* ---------- Store：唯一读写入口 ---------- */
+const Store = {
+  KEY: 'hpm_demo_store_v1',
+  data: { answers: {}, backStack: [], completed: false, paid: false, generated: false,
+          matchId: null, matchPct: null, scores: null, orderId: null, demo: false, feedback: false },
+  load() {
+    try {
+      const raw = localStorage.getItem(this.KEY);
+      if (raw) Object.assign(this.data, JSON.parse(raw));
+    } catch (e) {}
+  },
+  save() { localStorage.setItem(this.KEY, JSON.stringify(this.data)); },
+  reset() {
+    this.data.answers = {};
+    this.data.backStack = [];
+    this.data.completed = false;
+    this.data.generated = false;
+    this.data.matchId = null;
+    this.data.matchPct = null;
+    this.data.scores = null;
+    this.data.demo = false;
+    this.save();
+  },
+  answer(qIdx, optIdx) {
+    this.data.answers[qIdx] = optIdx;
+    this.data.backStack.push(qIdx);
+    if (this.data.backStack.length > 3) this.data.backStack.shift();
+    this.save();
+  },
+  canBack() { return this.data.backStack.length > 0; },
+  popBack() { return this.data.backStack.pop(); },
+  done() { this.data.completed = true; this.save(); },
+
+  /* 八维得分：原始权重 → 0-100 分 */
+  calcScores() {
+    const raw = {}; DIMS.forEach(d => raw[d] = 0);
+    QUESTIONS.forEach((q, i) => {
+      const opt = this.data.answers[i];
+      if (opt === undefined) return;
+      const w = q.o[opt][1];
+      for (const d in w) raw[d] += w[d];
+    });
+    const scores = {};
+    DIMS.forEach(d => scores[d] = Math.min(97, Math.max(25, Math.round(32 + raw[d] * 2.3))));
+    return scores;
+  },
+  /* 匹配引擎 v1.1：八维曼哈顿距离（替代旧余弦+全正向量——该方案导致相似度普遍 99%、人物可达性靠随机抖动）。
+     pct = 100 - 八维平均绝对差 × 1.6 + 确定性微扰；k=1.6 经 1 万次随机作答模拟校准（中位数 74%，95 分位 78%）。 */
+  computeMatch() {
+    if (Object.keys(this.data.answers).length < QUESTIONS.length) return false;
+    this.data.scores = this.calcScores();
+    const jitter = (Object.values(this.data.answers).reduce((a, b) => a + b, 0) % 7) - 3;
+    let best = null, bestPct = -1;
+    FIGURES.forEach(f => {
+      let mad = 0;
+      DIMS.forEach((d, i) => mad += Math.abs(this.data.scores[d] - f.scores[i]));
+      mad /= DIMS.length;
+      const pct = Math.round(100 - mad * 1.6) + jitter;
+      if (pct > bestPct) { bestPct = pct; best = f; }
+    });
+    this.data.matchId = best.id;
+    this.data.matchPct = Math.min(99, Math.max(55, bestPct));
+    this.data.completed = true;
+    this.save();
+    return true;
+  },
+  getFigure(id) { return FIGURES.find(f => f.id === id) || null; },
+  pay(channel) {
+    this.data.paid = true;
+    this.data.orderId = 'HPM' + Date.now().toString(36).toUpperCase();
+    this.save();
+  },
+  topDims() {
+    if (!this.data.scores) return [];
+    return DIMS.slice().sort((a, b) => this.data.scores[b] - this.data.scores[a]);
+  }
+};
+
+/* ---------- Toast ---------- */
+const Toast = {
+  el: null,
+  show(msg) {
+    if (!this.el) {
+      this.el = document.createElement('div');
+      this.el.id = 'toast';
+      document.body.appendChild(this.el);
+    }
+    this.el.textContent = msg;
+    this.el.classList.add('show');
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.el.classList.remove('show'), 2200);
+  }
+};
+
+/* ---------- 无答题数据时的示例兜底（页面直开不白屏） ---------- */
+function ensureAnswers() {
+  Store.load();
+  if (Object.keys(Store.data.answers).length < QUESTIONS.length) {
+    const demoAns = [2,1,1,3,0,1,1,3,1,2,0,3,1,1,2,1,0,2,0,3,0,1,3,0];
+    Store.data.answers = {};
+    demoAns.forEach((v, i) => Store.data.answers[i] = v);
+    Store.data.demo = true;
+    Store.computeMatch();
+    Store.save();
+    Toast.show('未检测到答题数据，已载入示例数据（重新答题可生成你的专属结果）');
+  }
+}
+
+/* ---------- Canvas：八维雷达图 ---------- */
+function drawRadar(canvas, size, userScores, figScores) {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = size * dpr; canvas.height = size * dpr;
+  canvas.style.width = size + 'px'; canvas.style.height = size + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const cx = size / 2, cy = size / 2, R = size / 2 - 34;
+  const n = DIMS.length;
+  const pt = (i, r) => {
+    const ang = -Math.PI / 2 + i * 2 * Math.PI / n;
+    return [cx + Math.cos(ang) * r, cy + Math.sin(ang) * r];
+  };
+  ctx.strokeStyle = 'rgba(43,38,34,0.12)';
+  for (let ring = 1; ring <= 4; ring++) {
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const [x, y] = pt(i % n, R * ring / 4);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  for (let i = 0; i < n; i++) {
+    const [x, y] = pt(i, R);
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y); ctx.stroke();
+    const [lx, ly] = pt(i, R + 20);
+    ctx.fillStyle = '#2B2622';
+    ctx.font = '600 12px -apple-system, "PingFang SC", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(DIMS[i], lx, ly);
+  }
+  const poly = (scores, stroke, fill, dash) => {
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const d = DIMS[i % n];
+      const [x, y] = pt(i % n, R * scores[d] / 100);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.setLineDash(dash || []);
+    ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = fill; ctx.fill();
+  };
+  poly(figScores, 'rgba(156,146,136,0.9)', 'rgba(156,146,136,0.10)', [5, 4]);
+  poly(userScores, '#B03A2E', 'rgba(176,58,46,0.14)');
+  for (let i = 0; i < n; i++) {
+    const d = DIMS[i];
+    const [x, y] = pt(i, R * userScores[d] / 100);
+    ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#B03A2E'; ctx.fill();
+  }
+}
+
+/* ---------- 分享卡片绘制系统 ---------- */
+/* 令牌与 css/common.css 的 :root 保持一致：暖纸底 + 朱红印章 + 赭金点缀 */
+const P = {
+  paper: '#FAF6EF', ink: '#2B2622', ink2: '#6B6259', ink3: '#9C9288',
+  red: '#B03A2E', redDeep: '#8C2B22', redSoft: '#F7E8E5',
+  gold: '#A88132', goldSoft: '#F5EDDA',
+  frame: 'rgba(43,38,34,0.10)', hair: 'rgba(43,38,34,0.05)',
+  grid: 'rgba(43,38,34,0.14)'
+};
+const FONT = '"PingFang SC", "Microsoft YaHei", sans-serif';
+
+function rr(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight, align) {
+  const words = text.split('');
+  const lines = [];
+  let line = '';
+  for (const ch of words) {
+    if (ctx.measureText(line + ch).width > maxWidth && line) { lines.push(line); line = ch; }
+    else line += ch;
+  }
+  if (line) lines.push(line);
+  ctx.textAlign = align || 'center';
+  lines.forEach((ln, i) => ctx.fillText(ln, x, y + i * lineHeight));
+  return { bottom: y + (lines.length - 1) * lineHeight, lines: lines.length };
+}
+
+function drawChipRow(ctx, items, cy, h, fontSize) {
+  const gap = h * 0.4;
+  let total = 0;
+  const widths = items.map(it => {
+    ctx.font = '500 ' + fontSize + 'px ' + FONT;
+    const w = ctx.measureText(it.text).width + h * 1.15;
+    total += w;
+    return w;
+  });
+  total += gap * (items.length - 1);
+  let x = 375 - total / 2;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  items.forEach((it, i) => {
+    rr(ctx, x, cy - h / 2, widths[i], h, h / 2);
+    ctx.fillStyle = it.bg; ctx.fill();
+    ctx.fillStyle = it.fg;
+    ctx.fillText(it.text, x + widths[i] / 2, cy + 1);
+    x += widths[i] + gap;
+  });
+  ctx.textBaseline = 'alphabetic';
+  return { left: 375 - total / 2, right: 375 + total / 2 };
+}
+
+function drawOrnament(ctx, cx, y, span) {
+  ctx.strokeStyle = 'rgba(168,129,50,0.55)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cx - span, y); ctx.lineTo(cx - 20, y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx + 20, y); ctx.lineTo(cx + span, y); ctx.stroke();
+  ctx.save(); ctx.translate(cx, y); ctx.rotate(Math.PI / 4);
+  ctx.fillStyle = P.gold; ctx.fillRect(-5, -5, 10, 10); ctx.restore();
+}
+
+function drawSeal(ctx, cx, cy, size, ch, radius) {
+  rr(ctx, cx - size / 2 + 3, cy - size / 2 + 5, size, size, radius);
+  ctx.fillStyle = 'rgba(140,43,34,0.16)'; ctx.fill();
+  rr(ctx, cx - size / 2, cy - size / 2, size, size, radius);
+  ctx.fillStyle = P.red; ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2;
+  rr(ctx, cx - size / 2 + 7, cy - size / 2 + 7, size - 14, size - 14, Math.max(3, radius - 6));
+  ctx.stroke();
+  ctx.fillStyle = '#fff';
+  ctx.font = '600 ' + Math.round(size * 0.5) + 'px ' + FONT;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(ch, cx, cy + size * 0.04);
+  ctx.textBaseline = 'alphabetic';
+}
+
+function drawRadarShape(ctx, cx, cy, R, scores, labelFont, lineWidth) {
+  const n = DIMS.length;
+  const pt = (i, r) => {
+    const a = -Math.PI / 2 + i * 2 * Math.PI / n;
+    return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+  };
+  ctx.strokeStyle = P.grid; ctx.lineWidth = 1;
+  for (let ring = 1; ring <= 4; ring++) {
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) { const [x, y] = pt(i % n, R * ring / 4); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.stroke();
+  }
+  for (let i = 0; i < n; i++) { const [x, y] = pt(i, R); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y); ctx.stroke(); }
+  ctx.beginPath();
+  for (let i = 0; i <= n; i++) { const d = DIMS[i % n]; const [x, y] = pt(i % n, R * scores[d] / 100); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(176,58,46,0.15)'; ctx.fill();
+  ctx.strokeStyle = P.red; ctx.lineWidth = lineWidth; ctx.stroke();
+  for (let i = 0; i < n; i++) {
+    const [x, y] = pt(i, R * scores[DIMS[i]] / 100);
+    ctx.beginPath(); ctx.arc(x, y, lineWidth + 1, 0, Math.PI * 2); ctx.fillStyle = P.red; ctx.fill();
+  }
+  ctx.fillStyle = P.ink2;
+  ctx.font = '500 ' + labelFont + 'px ' + FONT;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  DIMS.forEach((d, i) => { const [x, y] = pt(i, R + labelFont * 1.8); ctx.fillText(d, x, y); });
+  ctx.textBaseline = 'alphabetic';
+  return { top: cy - R - labelFont * 2.4, bottom: cy + R + labelFont * 2.4 };
+}
+
+function drawPseudoQR(ctx, x, y, size, seed) {
+  rr(ctx, x - 7, y - 7, size + 14, size + 14, 10);
+  ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.strokeStyle = P.frame; ctx.lineWidth = 1; ctx.stroke();
+  const cells = 9, c = size / cells;
+  let s = seed || 7;
+  const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+  ctx.fillStyle = P.ink;
+  for (let i = 0; i < cells; i++) for (let j = 0; j < cells; j++) {
+    const corner = (i < 3 && j < 3) || (i < 3 && j > cells - 4) || (i > cells - 4 && j < 3);
+    if (corner) { if (i % 2 === 0 || j % 2 === 0) ctx.fillRect(x + j * c, y + i * c, c - 1.5, c - 1.5); }
+    else if (rnd() > 0.53) ctx.fillRect(x + j * c, y + i * c, c - 1.5, c - 1.5);
+  }
+}
+
+/* 主绘制：ratio = '3:4'（小红书竖图）| '1:1'（朋友圈方图） */
+function drawShareCard(canvas, fig, pct, scores, ratio) {
+  ratio = ratio || '3:4';
+  const small = ratio === '1:1';
+  const W = 750, H = small ? 750 : 1000;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = '100%';
+  canvas.style.height = 'auto';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const sorted = DIMS.slice().sort((a, b) => scores[b] - scores[a]);
+  const strong = sorted[0], weak = sorted[7];
+  const plan = [];
+
+  ctx.fillStyle = P.paper; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = P.red; ctx.fillRect(0, 0, W, small ? 10 : 14);
+  const inset = small ? 14 : 20;
+  ctx.strokeStyle = P.frame; ctx.lineWidth = 1; rr(ctx, inset, inset, W - inset * 2, H - inset * 2, 18); ctx.stroke();
+  ctx.strokeStyle = P.hair; rr(ctx, inset + 8, inset + 8, W - (inset + 8) * 2, H - (inset + 8) * 2, 14); ctx.stroke();
+  ctx.textAlign = 'center';
+
+  const T = (str, size, color, baseline, weight, align, leftX) => {
+    const px = align === 'left' ? (leftX || 78) : 375;
+    ctx.fillStyle = color;
+    ctx.font = (weight || '400') + ' ' + size + 'px ' + FONT;
+    ctx.textAlign = align || 'center';
+    ctx.fillText(str, px, baseline);
+    const w = ctx.measureText(str).width;
+    const x1 = px - (align === 'left' ? 0 : w / 2);
+    plan.push({ n: str.slice(0, 6), x1: x1, x2: x1 + w, y1: baseline - size * 0.88, y2: baseline + size * 0.16 });
+    return { x1: x1, x2: x1 + w, y1: baseline - size * 0.88, y2: baseline + size * 0.16 };
+  };
+
+  /* 1. 品牌行 */
+  T('你 最 像 哪 个 历 史 人 物', small ? 22 : 25, P.ink3, small ? 70 : 92);
+  let y = small ? 86 : 110;
+  ctx.strokeStyle = 'rgba(43,38,34,0.18)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(345, y); ctx.lineTo(405, y); ctx.stroke();
+
+  /* 2. 人物印章 */
+  const sealSize = small ? 86 : 122;
+  const sealTop = y + (small ? 5 : 7);
+  drawSeal(ctx, 375, sealTop + sealSize / 2, sealSize, fig.name[0], small ? 14 : 18);
+  plan.push({ n: 'seal', x1: 375 - sealSize / 2 - 4, x2: 375 + sealSize / 2 + 4, y1: sealTop, y2: sealTop + sealSize + 5 });
+  y = sealTop + sealSize;
+
+  /* 3. 姓名 */
+  const nameSize = small ? 46 : 58;
+  const nameBase = y + nameSize + (small ? 6 : 11);
+  T(fig.name, nameSize, P.ink, nameBase, '600');
+
+  /* 4. 朝代 + 标签 */
+  const chipH = small ? 32 : 38, chipFont = small ? 19 : 22;
+  const chipTop = nameBase + (small ? 11 : 17);
+  const chipRow = drawChipRow(ctx, [{ text: fig.dynasty, fg: P.gold, bg: P.goldSoft }]
+    .concat(fig.tags.map(t => ({ text: t, fg: P.red, bg: P.redSoft }))), chipTop + chipH / 2, chipH, chipFont);
+  plan.push({ n: 'chips', x1: chipRow.left - 4, x2: chipRow.right + 4, y1: chipTop, y2: chipTop + chipH });
+  y = chipTop + chipH;
+
+  /* 5. 匹配度（标签 + 大数字） */
+  const lbSize = small ? 18 : 21;
+  const lbBase = y + lbSize + (small ? 7 : 12);
+  T('八 维 人 格 匹 配 度', lbSize, P.ink3, lbBase);
+  const pctSize = small ? 62 : 76;
+  const pctBase = lbBase + pctSize * (small ? 0.95 : 0.92) + (small ? 5 : 8);
+  const pctBox = T(pct + '%', pctSize, P.red, pctBase, '600');
+  const ruleY = pctBase - pctSize * 0.34;
+  ctx.strokeStyle = 'rgba(176,58,46,0.32)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(135, ruleY); ctx.lineTo(198, ruleY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(552, ruleY); ctx.lineTo(615, ruleY); ctx.stroke();
+  y = pctBox.y2 + (small ? 8 : 16);
+
+  /* 6. 心声金句 */
+  const qSize = small ? 24 : 29, qlh = small ? 31 : 38;
+  ctx.fillStyle = P.gold; ctx.font = '500 ' + qSize + 'px ' + FONT;
+  const qBox = wrapText(ctx, '「' + fig.quote + '」', 375, y + qSize, small ? 556 : 580, qlh, 'center');
+  plan.push({ n: 'quote', x1: 375 - (small ? 278 : 290), x2: 375 + (small ? 278 : 290), y1: y - 4, y2: qBox.bottom + qSize * 0.2 });
+  y = qBox.bottom + qSize * 0.2;
+
+  /* 7. 装饰分隔 */
+  const ornY = y + (small ? 17 : 28);
+  drawOrnament(ctx, 375, ornY, small ? 110 : 132);
+  plan.push({ n: 'ornament', x1: 245, x2: 505, y1: ornY - 8, y2: ornY + 8 });
+
+  /* 8. 八维雷达图 */
+  const R = small ? 48 : 76;
+  const labelFont = small ? 14 : 19;
+  const extent = R + labelFont * 1.85 + 5;
+  const radarCy = ornY + (small ? 20 : 14) + extent;
+  const rb = drawRadarShape(ctx, 375, radarCy, R, scores, labelFont, small ? 2.5 : 3);
+  plan.push({ n: 'radar', x1: 375 - extent * 0.92, x2: 375 + extent * 0.92, y1: radarCy - extent, y2: radarCy + extent });
+  y = radarCy + extent;
+
+  /* 9. 页脚：二维码 + 引导文案（左对齐排版，与雷达图水平错开） */
+  const qrSize = small ? 54 : 76;
+  const qrTop = small ? (H - 44 - qrSize) : (y + 12);
+  const bandBottom = qrTop + qrSize + 10;
+  drawPseudoQR(ctx, 78, qrTop, qrSize, fig.name.charCodeAt(0));
+  plan.push({ n: 'qr', x1: 71, x2: 78 + qrSize + 7, y1: qrTop - 7, y2: qrTop + qrSize + 7 });
+  const tx = 78 + qrSize + (small ? 18 : 26);
+  T('扫码测测你像谁', small ? 21 : 26, P.ink, small ? qrTop + 21 : qrTop + 33, '500', 'left', tx);
+  T(small ? '24 道情景题 · 现在完全免费开放' : '24 道情景题 · 匹配你的历史人物 · 完全免费',
+    small ? 16 : 20, P.ink2, small ? qrTop + 43 : qrTop + 63, '400', 'left', tx);
+  if (small) T('趣味心理测试 · 非命理预测', 14, P.ink3, H - 28);
+  else T('趣味心理测试 · 非命理预测', 16, P.ink3, Math.min(bandBottom - 2, H - 40));
+
+  window.__shareLayout = { ratio, W, H, plan };
+}
+
+function go(page) { location.href = page; }
+Store.load();
