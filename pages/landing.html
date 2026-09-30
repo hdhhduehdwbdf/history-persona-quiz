@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>历史人物性格匹配测评</title>
+<link rel="stylesheet" href="../css/common.css">
+</head>
+<body>
+<div class="phone">
+
+  <div style="padding:34px 22px 6px;" class="fade-in">
+    <h1 style="font-size:24px;line-height:1.45;margin:0 0 10px;">历史人物性格匹配测评</h1>
+    <p class="muted" style="font-size:14px;">通过 24 道情景题，匹配一位与你心性相近的历史人物，并生成一份八维人格画像报告。</p>
+    <p class="tiny" style="margin-top:14px;">当前开放使用，无需付费。</p>
+  </div>
+
+  <div class="card fade-in" style="text-align:center;padding:20px 16px;">
+    <p class="tiny" style="margin-bottom:14px;">测评流程</p>
+    <div style="display:flex;justify-content:space-between;gap:6px;">
+      <div style="flex:1;">
+        <div style="width:38px;height:38px;border-radius:50%;background:var(--bg-deep);color:var(--ink2);display:flex;align-items:center;justify-content:center;font-weight:600;margin:0 auto 8px;">1</div>
+        <p style="font-size:13px;font-weight:500;">作答 24 题</p>
+        <p class="tiny">情景选择题</p>
+      </div>
+      <div style="align-self:center;color:var(--ink3);">→</div>
+      <div style="flex:1;">
+        <div style="width:38px;height:38px;border-radius:50%;background:var(--bg-deep);color:var(--ink2);display:flex;align-items:center;justify-content:center;font-weight:600;margin:0 auto 8px;">2</div>
+        <p style="font-size:13px;font-weight:500;">八维匹配</p>
+        <p class="tiny">人格维度的相似度比对</p>
+      </div>
+      <div style="align-self:center;color:var(--ink3);">→</div>
+      <div style="flex:1;">
+        <div style="width:38px;height:38px;border-radius:50%;background:var(--bg-deep);color:var(--ink2);display:flex;align-items:center;justify-content:center;font-weight:600;margin:0 auto 8px;">3</div>
+        <p style="font-size:13px;font-weight:500;">获取报告</p>
+        <p class="tiny">画像、底色与建议</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card fade-in">
+    <p class="section-title" style="margin:0 0 10px -2px;">人物谱系</p>
+    <p class="muted" style="font-size:13px;">人物画像横跨古今中外：从先秦诸子到晚清重臣，从佛罗伦萨到不列颠——帝王、宰辅、文士、词人、科学家、统帅、剧作家，依同一套八维人格轴分布，与你的作答进行相似度比对。</p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;">
+      <span class="seal" style="width:42px;height:42px;font-size:19px;box-shadow:none;">曾</span>
+      <span class="seal" style="width:42px;height:42px;font-size:19px;background:#4A7A5A;box-shadow:none;">苏</span>
+      <span class="seal" style="width:42px;height:42px;font-size:19px;background:#A88132;box-shadow:none;">武</span>
+      <span class="seal" style="width:42px;height:42px;font-size:19px;background:#2B2622;box-shadow:none;">诸</span>
+      <span class="seal" style="width:42px;height:42px;font-size:19px;background:#5B6B8C;box-shadow:none;">婉</span>
+      <span class="seal" style="width:42px;height:42px;font-size:19px;background:#8C5B6B;box-shadow:none;">拿</span>
+    </div>
+    <p class="tiny" style="margin-top:12px;">以上为部分人物画像示意；人物画像库在持续扩充中，因此不作数量说明。</p>
+  </div>
+
+  <p class="tiny" style="text-align:center;padding:0 24px 6px;line-height:1.7;">
+    趣味心理测评，不构成命理预测或心理诊断；作答数据仅在本地浏览器处理，不上传服务器。
+  </p>
+
+  <div class="bottom-bar">
+    <button class="btn-primary" onclick="startQuiz()">开始测评</button>
+    <p class="tiny" style="text-align:center;margin-top:6px;" id="resume-hint"></p>
+  </div>
+
+</div>
+<script src="../core.js"></script>
+<script>
+Store.load();
+if (Object.keys(Store.data.answers).length >= QUESTIONS.length && Store.data.completed) {
+  document.getElementById('resume-hint').textContent =
+    '检测到上次作答记录，重新开始将覆盖原有作答';
+}
+function startQuiz() {
+  Store.reset();
+  go('quiz.html');
+}
+</script>
+</body>
+</html>

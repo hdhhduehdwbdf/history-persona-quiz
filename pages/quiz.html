@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>情景测试</title>
+<link rel="stylesheet" href="../css/common.css">
+<style>
+  /* 答题页无固定底栏，收回为底栏预留的留白 */
+  .phone { padding-bottom: 32px; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div style="padding:20px 16px 10px;display:flex;align-items:center;justify-content:space-between;">
+    <span class="btn-ghost" id="btn-back" onclick="goBack()" style="visibility:hidden;">← 上一题</span>
+    <span style="font-size:13px;color:var(--ink2);" id="progress-label">第 1 题 / 共 24 题</span>
+  </div>
+  <div class="progress-wrap"><div class="progress-bar" id="progress-bar" style="width:4%;"></div></div>
+  <div id="quiz-body" style="padding-top:26px;"></div>
+</div>
+<script src="../core.js"></script>
+<script>
+Store.load();
+let cur = 0;
+let backCount = 0; /* 连续回退计数，PRD：最多回退 3 步 */
+for (let i = 0; i < QUESTIONS.length; i++) {
+  if (Store.data.answers[i] === undefined) { cur = i; break; }
+}
+
+function render() {
+  const q = QUESTIONS[cur];
+  const picked = Store.data.answers[cur];
+  const pct = Math.round(((cur + 1) / QUESTIONS.length) * 100);
+  document.getElementById('progress-bar').style.width = Math.max(4, pct) + '%';
+  document.getElementById('progress-label').textContent = '第 ' + (cur + 1) + ' 题 / 共 ' + QUESTIONS.length + ' 题';
+  const letters = ['A', 'B', 'C', 'D'];
+  const canBack = cur > 0 && backCount < 3;
+  document.getElementById('btn-back').style.visibility = canBack ? 'visible' : 'hidden';
+  document.getElementById('quiz-body').innerHTML =
+    '<div style="margin:0 16px 10px;"><span class="chip chip-gray">' + q.cat + '</span></div>' +
+    '<h2 style="margin:0 16px 20px;font-size:19px;line-height:1.5;">' + q.q + '</h2>' +
+    q.o.map((opt, i) =>
+      '<div class="card" style="margin:0 16px 12px;padding:15px 16px;cursor:pointer;' +
+      (picked === i ? 'border:1.5px solid var(--primary);background:var(--primary-soft);' : '') +
+      '" onclick="pick(' + i + ')">' +
+      '<span style="display:inline-flex;width:20px;height:20px;border-radius:50%;background:' +
+      (picked === i ? 'var(--primary);color:#fff;' : 'var(--bg-deep);color:var(--ink2);') +
+      'align-items:center;justify-content:center;font-size:11px;font-weight:600;margin-right:8px;vertical-align:middle;">'
+      + letters[i] + '</span><span style="vertical-align:middle;">' + opt[0] + '</span></div>').join('') +
+    '<p class="tiny" style="text-align:center;margin-top:8px;">点击选项自动进入下一题' +
+    (backCount >= 3 ? ' · 已达回退上限' : ' · 最多可回退 3 步') + '</p>';
+}
+
+function pick(i) {
+  backCount = 0;
+  Store.data.answers[cur] = i;
+  if (!Store.data.backStack.includes(cur)) Store.data.backStack.push(cur);
+  if (Store.data.backStack.length > 3) Store.data.backStack.shift();
+  Store.save();
+  if (cur < QUESTIONS.length - 1) { cur++; render(); }
+  else { finish(); }
+}
+
+function goBack() {
+  if (!(cur > 0 && backCount < 3)) {
+    Toast.show('最多只能回退 3 步哦');
+    return;
+  }
+  delete Store.data.answers[cur];
+  Store.save();
+  cur--;
+  backCount++;
+  render();
+}
+
+function finish() {
+  Store.computeMatch();
+  Toast.show('答题完成！正在生成你的匹配结果…');
+  setTimeout(() => go('result.html'), 900);
+}
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>完整测评报告</title>
+<link rel="stylesheet" href="../css/common.css">
+<style>
+  /* 报告末尾留白，确保最后一段不被固定底栏遮挡 */
+  #report-body { padding-bottom: 6px; }
+  .report-end { height: 10px; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div style="padding:18px 16px;display:flex;align-items:center;gap:10px;border-bottom:0.5px solid var(--line);">
+    <span class="btn-ghost" onclick="go('result.html')">←</span>
+    <h3 style="font-size:16px;">完整测评报告</h3>
+  </div>
+  <div id="report-body"></div>
+
+  <div class="bottom-bar">
+    <button class="btn-primary" onclick="go('share.html')">生成分享卡片</button>
+    <p class="tiny" style="text-align:center;margin-top:6px;">截图分享到小红书/朋友圈，看看朋友像谁</p>
+  </div>
+</div>
+
+<script src="../core.js"></script>
+<script>
+ensureAnswers();
+const fig = Store.getFigure(Store.data.matchId) || FIGURES[0];
+const pct = Store.data.matchPct || 88;
+const scores = Store.data.scores || Store.calcScores();
+const sorted = Store.topDims();
+const top1 = sorted[0], top2 = sorted[1], weak1 = sorted[7], weak2 = sorted[6];
+
+function keyAnswer() {
+  for (let i = 0; i < QUESTIONS.length; i++) {
+    const a = Store.data.answers[i];
+    if (a === undefined) continue;
+    const w = QUESTIONS[i].o[a][1];
+    if (w[top1] >= 2) return { idx: i + 1, text: QUESTIONS[i].o[a][0], q: QUESTIONS[i].q };
+  }
+  return { idx: 1, text: QUESTIONS[0].o[0][0], q: QUESTIONS[0].q };
+}
+
+function sec(title, inner) {
+  return '<div class="card fade-in" style="margin-top:14px;">' +
+    '<p class="section-title" style="margin:0 0 10px -2px;">' + title + '</p>' + inner + '</div>';
+}
+
+function renderGenerating() {
+  const steps = ['调阅你的 24 份作答底档…', '八维画像 vs 人物库，逐位比对…', '请本人出场，过目你的档案…', '拆解你们共用的三层底色…', '圈出盲点，写好成长清单…'];
+  document.getElementById('report-body').innerHTML =
+    '<div style="text-align:center;padding:80px 30px;" class="fade-in">' +
+    '<div class="seal" style="width:64px;height:64px;font-size:30px;margin:0 auto 18px;animation:pulse 1s infinite;">' + fig.name[0] + '</div>' +
+    '<h3 style="font-size:17px;">正在为你分析</h3>' +
+    '<p class="muted" style="margin-top:6px;" id="gen-step">' + steps[0] + '</p>' +
+    '<div class="progress-wrap" style="margin:24px 30px 0;"><div class="progress-bar" id="gen-bar" style="width:6%;"></div></div>' +
+    '<p class="tiny" style="margin-top:10px;">预计 30 秒内完成（原型演示已加速）</p></div>' +
+    '<style>@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}</style>';
+  steps.forEach((s, i) => {
+    setTimeout(() => {
+      const el = document.getElementById('gen-step');
+      const bar = document.getElementById('gen-bar');
+      if (el) el.textContent = s;
+      if (bar) bar.style.width = (12 + i * 22) + '%';
+    }, 500 + i * 700);
+  });
+  setTimeout(renderReport, 500 + steps.length * 700 + 300);
+}
+
+function renderReport() {
+  const ka = keyAnswer();
+  const dimRows = DIMS.map(d => {
+    const u = scores[d], f = fig.scores[DIMS.indexOf(d)];
+    const diff = u - f;
+    const diffTxt = diff >= 3 ? '<span style="color:var(--primary);font-size:12px;">+' + diff + '</span>'
+      : diff <= -3 ? '<span style="color:var(--green);font-size:12px;">' + diff + '</span>'
+      : '<span class="tiny">接近</span>';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;">' +
+      '<span style="width:34px;color:var(--ink2);">' + d + '</span>' +
+      '<div style="flex:1;height:6px;border-radius:3px;background:var(--bg-deep);position:relative;">' +
+      '<div style="position:absolute;left:0;top:0;height:100%;width:' + u + '%;border-radius:3px;background:var(--primary);"></div>' +
+      '</div><b style="width:26px;text-align:right;">' + u + '</b>' + diffTxt + '</div>';
+  }).join('');
+
+  document.getElementById('report-body').innerHTML =
+    '<div style="text-align:center;padding:26px 20px 4px;" class="fade-in">' +
+      '<div class="seal" style="width:64px;height:64px;font-size:30px;margin:0 auto 10px;">' + fig.name[0] + '</div>' +
+      '<h2 style="font-size:20px;">' + fig.name + ' · ' + fig.dynasty + '</h2>' +
+      '<p style="color:var(--primary);font-weight:600;font-size:14px;margin-top:4px;">匹配度 ' + pct + '%</p>' +
+      '<p style="font-size:13.5px;color:var(--gold);margin-top:8px;line-height:1.7;">「' + (fig.opener || '') + '」</p>' +
+      '<p class="tiny" style="margin-top:4px;">' + (FREE_MODE ? '当前开放使用 · 完整报告无需付费' : '订单号 ' + (Store.data.orderId || '—') + ' · 已解锁') + '</p>' +
+    '</div>' +
+
+    /* 人物概括：三句话提炼整体画像（新增板块） */
+    '<div class="card fade-in" style="margin-top:14px;background:var(--gold-soft);border-color:rgba(168,129,50,0.25);">' +
+      '<p class="section-title" style="margin:0 0 10px -2px;color:var(--gold);">人物概括 · 三句话读你</p>' +
+      (fig.summary3 || []).map((s, i) =>
+        '<p style="font-size:14px;line-height:1.8;margin-bottom:8px;">' +
+        '<span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:var(--primary);color:#fff;' +
+        'font-size:11px;text-align:center;line-height:20px;margin-right:8px;vertical-align:middle;">' + (i + 1) + '</span>' + s + '</p>').join('') +
+      '<p class="tiny" style="margin-top:2px;">以上为整体画像的提炼，逐条依据见下方七章。</p>' +
+    '</div>' +
+
+    sec('一 · 人物匹配详情',
+      '<p style="font-size:14px;">' + fig.intro + '</p>' +
+      '<div class="divider"></div>' +
+      '<p class="muted" style="font-size:13px;">为什么是你：你在<b style="color:var(--ink);">' + top1 + '</b>与<b style="color:var(--ink);">' + top2 + '</b>两个维度上显著高于均值（' + scores[top1] + ' / ' + scores[top2] + ' 分），与' + fig.name + '的核心人格轴同构；而你的<b style="color:var(--ink);">' + weak1 + '</b>（' + scores[weak1] + ' 分）也正是他早年的短板——他是先补齐了它，才成就后来的自己。</p>') +
+
+    sec('二 · 八维能力雷达图',
+      '<div style="text-align:center;"><canvas id="radar"></canvas></div>' +
+      '<div style="display:flex;gap:12px;justify-content:center;margin-top:6px;" class="tiny">' +
+      '<span>实线 = 你</span><span>虚线 = ' + fig.name + '</span></div>' +
+      '<div class="divider"></div>' + dimRows) +
+
+    sec('三 · 人物自画像',
+      '<p style="font-size:14px;">' + fig.self_portrait + '</p>' +
+      '<p class="tiny" style="margin-top:10px;">依据：你在第 ' + ka.idx + ' 题选择了「' + ka.text + '」——这是「' + fig.name + '式反应」的典型信号。</p>') +
+
+    sec('四 · 共同底色拆解',
+      fig.base_color.map(b =>
+        '<div style="padding:10px 0;border-bottom:0.5px solid var(--line);">' +
+        '<p style="font-size:14px;font-weight:600;color:var(--primary);">' + b.t + '</p>' +
+        '<p class="muted" style="font-size:13px;margin-top:4px;">' + b.d + '</p></div>').join('')) +
+
+    sec('五 · 现实互动方式',
+      '<p style="font-size:14px;">' + fig.interaction + '</p>') +
+
+    sec('六 · 盲点与风险提醒',
+      '<div style="background:var(--primary-soft);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px;">' +
+      '<p style="font-size:13px;font-weight:600;color:var(--primary);">性格盲点</p>' +
+      '<p class="muted" style="font-size:13px;margin-top:4px;">' + fig.blind_spot + '</p></div>' +
+      '<div style="background:var(--gold-soft);border-radius:var(--radius-sm);padding:12px 14px;">' +
+      '<p style="font-size:13px;font-weight:600;color:var(--gold);">风险提醒</p>' +
+      '<p class="muted" style="font-size:13px;margin-top:4px;">' + fig.risk + '</p></div>') +
+
+    sec('七 · 成长建议',
+      '<p style="font-size:14px;">' + fig.suggestion + '</p>' +
+      '<p class="tiny" style="margin-top:10px;">你的待激活维度是「' + weak2 + '」（' + scores[weak2] + ' 分）与「' + weak1 + '」（' + scores[weak1] + ' 分）。' + fig.name + '的解法是：不硬补短板，而是把长板用到极致，让长板替短板挡风。</p>') +
+
+    '<div style="margin:16px 16px 0;text-align:center;">' +
+    '<span class="btn-ghost" onclick="markBad()" style="' + (Store.data.feedback ? 'color:var(--ink3);' : '') + '">' +
+    (Store.data.feedback ? '已收到你的反馈，感谢校准 ✓' : '报告不准确？点此反馈（用于优化人物画像库）') + '</span></div>' +
+    '<div class="report-end"></div>';
+  drawRadar(document.getElementById('radar'), 320, scores, fig.scores);
+}
+
+function markBad() {
+  if (Store.data.feedback) { Toast.show('已收到反馈，感谢校准'); return; }
+  Store.data.feedback = true;
+  Store.save();
+  Toast.show('已记录反馈：报告不准确。数据将用于优化人物画像库与匹配权重');
+  renderReport();
+}
+
+const canView = FREE_MODE || Store.data.paid;
+if (canView) {
+  if (!FREE_MODE) { Store.data.paid = true; Store.data.orderId = Store.data.orderId || 'FREE'; Store.save(); }
+  if (Store.data.generated) renderReport();
+  else { renderGenerating(); Store.data.generated = true; Store.save(); }
+} else {
+  document.getElementById('report-body').innerHTML =
+    '<div style="text-align:center;padding:70px 30px;" class="fade-in">' +
+    '<div class="seal" style="width:60px;height:60px;font-size:28px;margin:0 auto 14px;filter:grayscale(0.6);opacity:0.7;">' + fig.name[0] + '</div>' +
+    '<h3 style="font-size:17px;">完整报告已生成</h3>' +
+    '<p class="muted" style="margin-top:6px;">前往结果页解锁 7 章完整内容</p></div>';
+}
+</script>
+</body>
+</html>

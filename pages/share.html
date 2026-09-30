@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>分享卡片</title>
+<link rel="stylesheet" href="../css/common.css">
+<style>
+  .seg { display: flex; background: var(--bg-deep); border-radius: 999px; padding: 3px; margin: 0 16px; }
+  .seg button { flex: 1; border: none; background: transparent; padding: 9px 0; border-radius: 999px; font-size: 13px;
+    color: var(--ink2); font-family: inherit; cursor: pointer; }
+  .seg button.on { background: var(--card); color: var(--ink); font-weight: 600; box-shadow: 0 1px 3px rgba(43,38,34,0.10); }
+  .stage { margin: 14px 16px 0; padding: 14px; border-radius: var(--radius); background: var(--bg-deep); }
+  .meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink3); margin-bottom: 8px; }
+  .copy-card { position: relative; }
+  .quote-line { font-size: 13px; color: var(--ink2); line-height: 1.7; }
+  .ready { display: inline-block; font-size: 11px; color: var(--green); background: #EAF3DE; border-radius: 999px; padding: 2px 8px; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div style="padding:18px 16px 14px;display:flex;align-items:center;gap:10px;border-bottom:0.5px solid var(--line);">
+    <span class="btn-ghost" onclick="go('report.html')">←</span>
+    <h3 style="font-size:16px;">分享卡片</h3>
+    <span style="margin-left:auto;" class="ready">已生成</span>
+  </div>
+
+  <div class="seg" style="margin-top:14px;">
+    <button id="tab-34" class="on" onclick="setRatio('3:4')">小红书 3:4</button>
+    <button id="tab-11" onclick="setRatio('1:1')">朋友圈 1:1</button>
+  </div>
+
+  <div class="stage">
+    <div class="meta"><span id="meta-size">750 × 1000</span><span>PNG · 可直接保存</span></div>
+    <canvas id="share-card"></canvas>
+  </div>
+
+  <div style="display:flex;gap:10px;margin:14px 16px 0;">
+    <button class="btn-primary" style="flex:1.4;margin:0;" onclick="saveCard()">保存图片</button>
+    <button class="btn-ghost" style="flex:1;padding:12px 0;text-align:center;" onclick="copyText()">复制文案</button>
+  </div>
+
+  <div class="card copy-card" style="margin-top:14px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <p class="section-title" style="margin:0 0 8px -2px;">分享文案</p>
+      <span class="btn-ghost" style="padding:4px 12px;font-size:12px;" onclick="nextCopy()">换一换</span>
+    </div>
+    <p class="quote-line" id="share-copy"></p>
+    <div class="divider"></div>
+    <p class="tiny">发布建议：小红书带 #性格测试 #历史人物 话题；朋友圈配卡片图 + 1 句疑问句（"你猜我像谁？"）互动率更高。</p>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="btn-primary" onclick="go('report.html')">返回我的报告</button>
+    <p class="tiny" style="text-align:center;margin-top:6px;">卡片由前端 Canvas 本地绘制，图片不上传任何服务器</p>
+  </div>
+</div>
+
+<script src="../core.js"></script>
+<script>
+ensureAnswers();
+const fig = Store.getFigure(Store.data.matchId) || FIGURES[0];
+const pct = Store.data.matchPct || 88;
+const scores = Store.data.scores || Store.calcScores();
+const sorted = Store.topDims();
+let ratio = '3:4';
+let copyIdx = 0;
+
+const COPIES = [
+  '我测出最像【' + fig.name + '】，匹配度 ' + pct + '%。标签：' + fig.tags.join(' / ') +
+  '。最强维是「' + sorted[0] + '」，盲点居然也和他一样…… 24 道情景题，现在完全免费，你来测测像谁 →',
+  '24 道情景题，把我测成了「' + fig.name + '」——' + pct + '% 匹配度。' +
+  '最扎心的是盲点那条：' + fig.blind_spot.slice(0, 26) + '……你们也来测测，报结果对暗号。',
+  '朋友说我是' + fig.name + '型，我一开始不信，直到看到' + pct + '% 的匹配度和八维雷达图。' +
+  '「' + fig.quote + '」——这句话我认领了。想知道你像谁？现在免费开放，链接在主页。'
+];
+
+function render() {
+  drawShareCard(document.getElementById('share-card'), fig, pct, scores, ratio);
+  document.getElementById('meta-size').textContent =
+    ratio === '3:4' ? '750 × 1000' : '750 × 750';
+  document.getElementById('tab-34').className = ratio === '3:4' ? 'on' : '';
+  document.getElementById('tab-11').className = ratio === '1:1' ? 'on' : '';
+  document.getElementById('share-copy').textContent = COPIES[copyIdx % COPIES.length];
+}
+function setRatio(r) { ratio = r; render(); Toast.show('已切换为' + (r === '3:4' ? '小红书 3:4 竖图' : '朋友圈 1:1 方图')); }
+function nextCopy() {
+  copyIdx++;
+  document.getElementById('share-copy').textContent = COPIES[copyIdx % COPIES.length];
+  Toast.show('已切换文案（第 ' + ((copyIdx % COPIES.length) + 1) + ' 版）');
+}
+function saveCard() {
+  const canvas = document.getElementById('share-card');
+  try {
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = '我最像' + fig.name + '_' + ratio.replace(':', '-') + '.png';
+    a.click();
+    Toast.show('已保存：我最像' + fig.name + '（' + ratio + '）.png');
+  } catch (e) {
+    Toast.show('当前浏览器不支持直接下载，可长按图片保存');
+  }
+}
+function copyText() {
+  const txt = document.getElementById('share-copy').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(txt).then(() => Toast.show('文案已复制，去小红书发布吧'))
+      .catch(() => Toast.show('复制失败，请手动长按选择'));
+  } else {
+    Toast.show('复制失败，请手动长按选择文案');
+  }
+}
+render();
+</script>
+</body>
+</html>
