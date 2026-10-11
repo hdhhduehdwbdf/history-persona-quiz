@@ -33,12 +33,13 @@
 <body>
 <div class="phone">
   <div style="padding:18px 16px;display:flex;align-items:center;gap:10px;border-bottom:0.5px solid var(--line);">
-    <span class="btn-ghost" onclick="go('result.html')">←</span>
+    <span class="btn-ghost" onclick="go('landing.html')">←</span>
     <h3 style="font-size:16px;">完整测评报告</h3>
   </div>
   <div id="report-body"></div>
 
   <div class="bottom-bar">
+    <button class="btn-ghost" style="flex:1;margin:0 8px 0 0;padding:12px 0;" onclick="go('gender.html')">重新测试</button>
     <button class="btn-primary" onclick="go('share.html')">生成分享卡片</button>
     <p class="tiny" style="text-align:center;margin-top:6px;">截图分享到小红书/朋友圈，看看朋友像谁</p>
   </div>
@@ -184,7 +185,7 @@ if (canView) {
     '<div style="text-align:center;padding:70px 30px;" class="fade-in">' +
     '<div class="seal" style="width:60px;height:60px;font-size:28px;margin:0 auto 14px;filter:grayscale(0.6);opacity:0.7;">' + fig.name[0] + '</div>' +
     '<h3 style="font-size:17px;">完整报告已生成</h3>' +
-    '<p class="muted" style="margin-top:6px;">前往结果页解锁 7 章完整内容</p></div>';
+    '<p class="muted" style="margin-top:6px;">解锁 7 章完整内容</p></div>';
 }
 </script>
 </body>
