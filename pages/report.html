@@ -28,6 +28,9 @@
   /* 报告末尾留白，确保最后一段不被固定底栏遮挡 */
   #report-body { padding-bottom: 6px; }
   .report-end { height: 10px; }
+  .bottom-bar { display: flex; flex-wrap: wrap; gap: 8px; padding-left: 16px; padding-right: 16px; }
+  .bottom-bar .btn-primary, .bottom-bar .btn-ghost { flex: 1; width: auto; margin: 0; }
+  .bottom-bar .tiny { flex-basis: 100%; }
 </style>
 </head>
 <body>
@@ -39,8 +42,8 @@
   <div id="report-body"></div>
 
   <div class="bottom-bar">
-    <button class="btn-ghost" style="flex:1;margin:0 8px 0 0;padding:12px 0;" onclick="go('gender.html')">重新测试</button>
-    <button class="btn-primary" style="flex:1;margin:0;" onclick="go('share.html')">生成分享卡片</button>
+    <button class="btn-ghost" onclick="go('gender.html')">重新测试</button>
+    <button class="btn-primary" onclick="go('share.html')">生成分享卡片</button>
     <p class="tiny" style="text-align:center;margin-top:6px;">截图分享到小红书/朋友圈，看看朋友像谁</p>
   </div>
 </div>
