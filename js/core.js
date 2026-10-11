@@ -834,7 +834,7 @@ function drawRadar(canvas, size, userScores, figScores) {
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(DIMS[i], lx, ly);
   }
-  const poly = (scores, stroke, fill, dash, lw) => {
+  const poly = (scores, stroke, fill, dash) => {
     ctx.beginPath();
     for (let i = 0; i <= n; i++) {
       const d = DIMS[i % n];
@@ -843,10 +843,11 @@ function drawRadar(canvas, size, userScores, figScores) {
     }
     ctx.closePath();
     ctx.setLineDash(dash || []);
-    ctx.strokeStyle = stroke; ctx.lineWidth = lw || 2; ctx.stroke();
+    ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = fill; ctx.fill();
   };
+  poly(figScores, 'rgba(156,146,136,0.9)', 'rgba(156,146,136,0.10)', [5, 4]);
   poly(userScores, '#B03A2E', 'rgba(176,58,46,0.14)');
   for (let i = 0; i < n; i++) {
     const d = DIMS[i];
@@ -854,7 +855,6 @@ function drawRadar(canvas, size, userScores, figScores) {
     ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2);
     ctx.fillStyle = '#B03A2E'; ctx.fill();
   }
-  poly(figScores, 'rgba(107,98,89,0.95)', 'rgba(156,146,136,0)', [7, 5], 2.5);
 }
 
 /* ---------- 分享卡片绘制系统 ---------- */
