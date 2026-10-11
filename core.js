@@ -665,12 +665,14 @@ const FIGURES = [
 const Store = {
   KEY: 'hpm_demo_store_v1',
   data: { answers: {}, backStack: [], completed: false, paid: false, generated: false, gender: null,
-          matchId: null, matchPct: null, scores: null, orderId: null, demo: false, feedback: false },
+          matchId: null, matchPct: null, scores: null, orderId: null, demo: false, feedback: false,
+          stats: { started: 0, completed: 0, shared: 0, retests: 0 } },
   load() {
     try {
       const raw = localStorage.getItem(this.KEY);
       if (raw) Object.assign(this.data, JSON.parse(raw));
     } catch (e) {}
+    if (!this.data.stats || typeof this.data.stats !== 'object') this.data.stats = { started: 0, completed: 0, shared: 0, retests: 0 };
   },
   save() { localStorage.setItem(this.KEY, JSON.stringify(this.data)); },
   reset() {
@@ -744,6 +746,7 @@ const Store = {
     this.data.matchId = best.id;
     this.data.matchPct = Math.min(99, Math.max(55, bestPct));
     this.data.completed = true;
+    this.data.stats.completed = (this.data.stats.completed || 0) + 1;
     this.save();
     return true;
   },
@@ -754,6 +757,7 @@ const Store = {
     return FIGURES;
   },
   setGender(g) {
+    if (this.data.completed) this.data.stats.retests = (this.data.stats.retests || 0) + 1;
     this.data.gender = g;
     this.reset();
     this.save();
@@ -1115,12 +1119,14 @@ function drawShareCard(canvas, fig, pct, scores, ratio) {
   ctx.beginPath(); ctx.moveTo(120, y + 6); ctx.lineTo(630, y + 6); ctx.stroke();
   const qSize = C.quote, qlh = C.qlh;
   ctx.fillStyle = P.ink;
+  ctx.font = '500 ' + qSize + 'px ' + FONT2;
   const qBox = wrapText(ctx, '「' + fig.quote + '」', 375, y + qSize + 30, 560, qlh, 'center');
-  plan.push({ n: 'quote', x1: 95, x2: 655, y1: y + 12, y2: qBox.bottom + qSize * 0.26 });
-  y = qBox.bottom + qSize * 0.5;
+  const quoteBottom = qBox.bottom + Math.round(qSize * 0.3);
+  plan.push({ n: 'quote', x1: 95, x2: 655, y1: y + 12, y2: quoteBottom });
+  y = quoteBottom + (ratio === '1:1' ? 16 : 24);
 
   /* 6. 标签行 */
-  const chipTop = y + (ratio === '1:1' ? 12 : 18);
+  const chipTop = y + (ratio === '1:1' ? 10 : 14);
   const chipRow = drawChipRow(ctx, [{ text: fig.dynasty, fg: accent, bg: accentSoft }]
     .concat(fig.tags.map(t => ({ text: t, fg: P.ink2, bg: 'rgba(43,38,34,0.055)' }))),
     chipTop + C.chipH / 2, C.chipH, C.chipF);

@@ -6,6 +6,9 @@
 <title>分享卡片</title>
 <link rel="stylesheet" href="../css/common.css">
 <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#8a2f2b">
+<script src="../assets/pwa.js" defer></script>
 <style>
   .seg { display: flex; background: var(--bg-deep); border-radius: 999px; padding: 3px; margin: 0 16px; }
   .seg button { flex: 1; border: none; background: transparent; padding: 9px 0; border-radius: 999px; font-size: 12.5px;
@@ -104,6 +107,8 @@ function nextCopy() {
   Toast.show('已换文案（第 ' + ((copyIdx % COPIES.length) + 1) + ' / ' + COPIES.length + ' 版）');
 }
 function saveCard() {
+  Store.data.stats.shared = (Store.data.stats.shared || 0) + 1;
+  Store.save();
   const canvas = document.getElementById('share-card');
   try {
     const a = document.createElement('a');

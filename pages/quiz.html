@@ -6,6 +6,9 @@
 <title>历史人物测验</title>
 <link rel="stylesheet" href="../css/common.css">
 <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#8a2f2b">
+<script src="../assets/pwa.js" defer></script>
 <style>
   /* 答题页无固定底栏，收回为底栏预留的留白 */
   .phone { padding-bottom: 32px; }
@@ -23,6 +26,10 @@
 <script src="../core.js"></script>
 <script>
 Store.load();
+if (Object.keys(Store.data.answers).length === 0) {
+  Store.data.stats.started = (Store.data.stats.started || 0) + 1;
+  Store.save();
+}
 let cur = 0;
 let backCount = 0; /* 连续回退计数，PRD：最多回退 3 步 */
 for (let i = 0; i < QUESTIONS.length; i++) {
