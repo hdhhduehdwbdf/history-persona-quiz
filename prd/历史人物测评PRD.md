@@ -33,7 +33,7 @@
 | 项 | 现状 |
 |----|------|
 | 技术形态 | 零构建纯前端（HTML + JS + CSS），无框架、无后端、零外部依赖 |
-| 商业模式 | **完全免费**（`core.js` 的 `FREE_MODE = true` 一行开关可切回 0.99 元付费形态） |
+| 商业模式 | **完全免费**（`js/core.js` 的 `FREE_MODE = true` 一行开关可切回 0.99 元付费形态） |
 | 题库 | 24 道情景题，每选项含八维权重 |
 | 人物库 | **20 位中外历史人物**（中国 10 位 + 国外 10 位），每人 15 个完整字段 |
 | 页面链路 | index → landing（首页）→ quiz（答题）→ result（结果）→ report（报告）→ share（分享卡片） |
@@ -151,7 +151,7 @@
 | 性能 | 匹配计算 O(20×8) 毫秒级；雷达图/分享卡片 canvas 一次绘制 | 现状 |
 | 移动端 | 375px 宽度无横向滚动、无底栏遮挡（`min-height:100%` + `--bar-h` 基线不回退） | 设计思路.md |
 | 可访问性 | 保留 focus-visible 与 prefers-reduced-motion | 设计思路.md |
-| 视觉 | 配色令牌与印章为定稿禁区，两处令牌（css/:root 与 core.js 的 P）必须同步 | 设计思路.md 禁区 |
+| 视觉 | 配色令牌与印章为定稿禁区，两处令牌（css/:root 与 js/core.js 的 P）必须同步 | 设计思路.md 禁区 |
 | 文案 | 全站去 AI 腔；正式基调（首页对外介绍用途），趣味性仅出现在结果/报告场景 | 工作约定 |
 | 协作 | 源码以 GitHub 私有仓库为唯一真源；改动经 commit 推送；上线经 deploy 且旧版本下线 | 2026-10-01 |
 
@@ -191,7 +191,7 @@
 
 ## 11. 参考资料
 
-- 本项目现状唯一真源：`历史人物测评原型/`（core.js / pages / css / 设计思路.md）
+- 本项目现状唯一真源：`历史人物测评原型/`（js/core.js / pages / css / docs/设计思路.md）
 - 线上地址：https://aa18518d3fc84d099c5a8df4f19d9d5e.app.workbuddy.host
 - GitHub 仓库：https://github.com/hdhhduehdwbdf/history-persona-quiz（私有）
 - 设计 skill：`anthropics/skills` 的 frontend-design 与 theme-factory（已装于 `~/.workbuddy/skills/`，用法结论见 设计思路.md）

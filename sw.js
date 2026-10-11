@@ -1,8 +1,8 @@
-const CACHE_NAME = 'hpq-v2';
+const CACHE_NAME = 'hpq-v3';
 const PRECACHE = [
   '/',
   '/index.html',
-  '/core.js',
+  '/js/core.js',
   '/css/common.css',
   '/assets/favicon.svg',
   '/assets/icon-192.png',

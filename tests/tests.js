@@ -1,6 +1,6 @@
 /* 项目自动校验与引擎指标验收：node tests.js 运行，失败退出码 1 */
 const fs = require('fs');
-let src = fs.readFileSync('core.js', 'utf8');
+let src = fs.readFileSync('js/core.js', 'utf8');
 const pre = 'global.localStorage={getItem:()=>null,setItem:()=>{}};global.Image=function(){};global.document={createElement:()=>({appendChild:()=>{},classList:{add:()=>{},remove:()=>{}}}),body:{appendChild:()=>{}}};';
 const { QUESTIONS, DIMS, FIGURES, Store, DIM_STATS } = new Function(pre + src + ';return {QUESTIONS,DIMS,FIGURES,Store,DIM_STATS};')();
 let failed = 0;
