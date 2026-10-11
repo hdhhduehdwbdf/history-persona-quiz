@@ -41,6 +41,14 @@ async function putSafely(request, response) {
   } catch (e) { /* 忽略缓存写入失败，不影响页面打开 */ }
 }
 
+/* 后台重新校验：拉取最新版并写入缓存，失败时静默忽略 */
+function revalidate(request) {
+  return fetch(request).then((response) => {
+    putSafely(request, response);
+    return response;
+  }).catch(() => null);
+}
+
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
@@ -66,16 +74,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  /* 静态资源（js / css / 图片）：stale-while-revalidate
+     先用缓存立即返回保证秒开与离线可用，同时在后台拉取最新版写回缓存，
+     下次访问即为新版。这样只改 js/css、忘记升 CACHE_NAME 也不会让老用户长期停在旧代码上。 */
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
     const cached = await cache.match(request);
-    if (cached) return cached;
-    try {
-      const response = await fetch(request);
-      putSafely(request, response);
-      return response;
-    } catch (e) {
-      return Response.error();
+    const fresh = revalidate(request);
+    if (cached) {
+      event.waitUntil(fresh);
+      return cached;
     }
+    const response = await fresh;
+    return response || Response.error();
   })());
 });
