@@ -1020,7 +1020,7 @@ function drawQr(ctx, x, y, size, seed) {
 function drawShareCard(canvas, fig, pct, scores, ratio) {
   const CFG = {
     '3:4':  { H: 1000, pad: 20, brand: 23, title: 25, name: 62, pct: 108, quote: 31, qlh: 42, chipH: 38, chipF: 22, seal: 112, radarR: 72, labelF: 19, qr: 92,  emblem: 320 },
-    '1:1':  { H: 750,  pad: 14, brand: 19, title: 20, name: 48, pct: 84,  quote: 25, qlh: 34, chipH: 32, chipF: 19, seal: 84,  radarR: 52, labelF: 15, qr: 72,  emblem: 250 },
+    '1:1':  { H: 750,  pad: 12, brand: 18, title: 19, name: 44, pct: 74,  quote: 23, qlh: 31, chipH: 30, chipF: 18, seal: 74,  radarR: 54, labelF: 13, qr: 66,  emblem: 230 },
     '9:16': { H: 1334, pad: 24, brand: 26, title: 29, name: 70, pct: 122, quote: 35, qlh: 48, chipH: 42, chipF: 24, seal: 130, radarR: 92, labelF: 21, qr: 104, emblem: 360 }
   };
   const C = CFG[ratio] || CFG['3:4'];
@@ -1055,19 +1055,21 @@ function drawShareCard(canvas, fig, pct, scores, ratio) {
   ctx.textBaseline = 'alphabetic';
 
   const inset = C.pad;
+  const footH = ratio === '1:1' ? 92 : 122;
+  const footTop = H - inset - footH - 6;
   ctx.strokeStyle = 'rgba(43,38,34,0.10)'; ctx.lineWidth = 1;
   rr(ctx, inset, inset, W - inset * 2, H - inset * 2, 18); ctx.stroke();
   ctx.strokeStyle = 'rgba(43,38,34,0.05)';
   rr(ctx, inset + 8, inset + 8, W - (inset + 8) * 2, H - (inset + 8) * 2, 14); ctx.stroke();
 
   const T = (str, size, color, baseline, weight, align, leftX) => {
-    const px = align === 'left' ? (leftX || 78) : 375;
+    const px = (align === 'left' || align === 'right') ? (leftX || 78) : 375;
     ctx.fillStyle = color;
     ctx.font = (weight || '400') + ' ' + size + 'px ' + FONT2;
     ctx.textAlign = align || 'center';
     ctx.fillText(str, px, baseline);
     const w = ctx.measureText(str).width;
-    const x1 = px - (align === 'left' ? 0 : w / 2);
+    const x1 = align === 'left' ? px : (align === 'right' ? px - w : px - w / 2);
     const box = { x1: x1, x2: x1 + w, y1: baseline - size * 0.86, y2: baseline + size * 0.18 };
     plan.push(Object.assign({ n: str.slice(0, 8) }, box));
     return box;
@@ -1100,6 +1102,7 @@ function drawShareCard(canvas, fig, pct, scores, ratio) {
   T('八 维 人 格 匹 合 度', lbSize, P.ink3, lbBase);
   const pctBase = lbBase + C.pct * 0.84;
   const pctBox = T(pct + '%', C.pct, accent, pctBase, '700');
+  pctBox.y1 = pctBase - C.pct * 0.72; plan[plan.length - 1].y1 = pctBox.y1;
   const ruleY = pctBase - C.pct * 0.33;
   ctx.strokeStyle = accent; ctx.globalAlpha = 0.35; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(pctBox.x1 - 96, ruleY); ctx.lineTo(pctBox.x1 - 26, ruleY); ctx.stroke();
@@ -1129,22 +1132,22 @@ function drawShareCard(canvas, fig, pct, scores, ratio) {
   drawOrnament(ctx, 375, ornY, ratio === '1:1' ? 100 : 130);
   plan.push({ n: 'ornament', x1: 245, x2: 505, y1: ornY - 8, y2: ornY + 8 });
   const extent = C.radarR + C.labelF * 1.85 + 4;
-  const radarCy = ornY + (ratio === '1:1' ? 16 : 22) + extent;
+  const gapAfterOrn = ratio === '1:1' ? 14 : 20;
+  const tagBlock = C.labelF * 2.6;
+  const maxExtent = Math.floor((footTop - ornY - gapAfterOrn - tagBlock) / 2);
+  const R = Math.max(34, Math.min(C.radarR, maxExtent - C.labelF * 1.85 - 4));
+  const extent2 = R + C.labelF * 1.85 + 4;
+  const radarCy = ornY + gapAfterOrn + extent2;
   ctx.save();
-  const radarBox = drawRadarShapeAccent(ctx, 375, radarCy, C.radarR, scores, C.labelF, ratio === '1:1' ? 2.5 : 3, accent);
+  const radarBox = drawRadarShapeAccent(ctx, 375, radarCy, R, scores, C.labelF, ratio === '1:1' ? 2.5 : 3, accent);
   ctx.restore();
-  plan.push({ n: 'radar', x1: 375 - extent * 0.95, x2: 375 + extent * 0.95, y1: radarCy - extent, y2: radarCy + extent });
+  plan.push({ n: 'radar', x1: 375 - extent2, x2: 375 + extent2, y1: radarCy - extent2, y2: radarCy + extent2 });
   const tagBase = radarBox.bottom + (ratio === '1:1' ? 14 : 20);
   T('最强 · ' + strong, Math.round(C.labelF * 1.15), accent, tagBase, '600');
-  const strongBox = plan[plan.length - 1];
-  plan.push({ n: 'strongWeak', x1: 100, x2: 650, y1: tagBase - C.labelF, y2: tagBase + 6 });
-  T('最弱 · ' + weak, Math.round(C.labelF * 1.15), P.ink3, tagBase, '400', 'left', 470);
-  if (strongBox && strongBox.x1 < 300) { /* 左移防止与右侧重叠 */ }
-  y = tagBase + 6;
+  T('最弱 · ' + weak, Math.round(C.labelF * 1.15), P.ink3, tagBase, '400', 'right', 375 + 210);
+  y = tagBase + C.labelF * 0.3;
 
   /* 8. 页脚：真实二维码 + 引导（底部锚定） */
-  const footH = ratio === '1:1' ? 96 : 122;
-  const footTop = H - inset - footH - 6;
   ctx.strokeStyle = 'rgba(43,38,34,0.10)'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(120, footTop); ctx.lineTo(630, footTop); ctx.stroke();
   const qrSize = C.qr;
@@ -1152,10 +1155,10 @@ function drawShareCard(canvas, fig, pct, scores, ratio) {
   drawQr(ctx, 78, qrTop, qrSize, fig.name.charCodeAt(0));
   plan.push({ n: 'qr', x1: 72, x2: 78 + qrSize + 6, y1: qrTop - 6, y2: qrTop + qrSize + 6 });
   const tx = 78 + qrSize + (ratio === '1:1' ? 20 : 26);
-  T('扫码测测你像谁', ratio === '1:1' ? 22 : 27, P.ink, qrTop + (ratio === '1:1' ? 24 : 32), '600', 'left', tx);
-  T('history-persona-quiz.netlify.app', ratio === '1:1' ? 15 : 18, accent, qrTop + (ratio === '1:1' ? 46 : 60), '500', 'left', tx);
-  T('24 道情景题 · 完全免费 · 手机即开', ratio === '1:1' ? 14 : 17, P.ink3, qrTop + (ratio === '1:1' ? 66 : 84), '400', 'left', tx);
-  T('趣味心理测试 · 非命理预测', ratio === '1:1' ? 13 : 15, P.ink3, H - inset - 12);
+  T('扫码测测你像谁', ratio === '1:1' ? 22 : 27, P.ink, qrTop + (ratio === '1:1' ? 26 : 32), '600', 'left', tx);
+  T('history-persona-quiz.netlify.app', ratio === '1:1' ? 15 : 18, accent, qrTop + (ratio === '1:1' ? 48 : 60), '500', 'left', tx);
+  if (ratio !== '1:1') T('24 道情景题 · 完全免费 · 手机即开', 17, P.ink3, qrTop + 84, '400', 'left', tx);
+  T('趣味心理测试 · 非命理预测', ratio === '1:1' ? 13 : 15, P.ink3, H - inset - 10);
 
   window.__shareLayout = { ratio, W, H, plan };
 }
