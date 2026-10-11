@@ -1019,9 +1019,9 @@ function drawQr(ctx, x, y, size, seed) {
 /* 主绘制：ratio = '3:4' 小红书 | '1:1' 朋友圈 | '9:16' 视频/状态长图 */
 function drawShareCard(canvas, fig, pct, scores, ratio) {
   const CFG = {
-    '3:4':  { H: 1000, pad: 18, brand: 22, title: 22, name: 52, pct: 72, quote: 28, qlh: 38, chipH: 34, chipF: 20, seal: 94, radarR: 62, labelF: 17, qr: 88,  emblem: 320 },
-    '1:1':  { H: 750,  pad: 12, brand: 17, title: 18, name: 40, pct: 50, quote: 22, qlh: 29, chipH: 28, chipF: 17, seal: 66, radarR: 46, labelF: 12, qr: 62,  emblem: 230 },
-    '9:16': { H: 1334, pad: 22, brand: 25, title: 27, name: 62, pct: 84, quote: 33, qlh: 45, chipH: 40, chipF: 23, seal: 116, radarR: 80, labelF: 19, qr: 100, emblem: 360 }
+    '3:4':  { H: 1000, pad: 18, brand: 22, title: 16, name: 52, pct: 72, quote: 28, qlh: 38, chipH: 34, chipF: 20, seal: 94, radarR: 62, labelF: 17, qr: 88,  emblem: 320 },
+    '1:1':  { H: 750,  pad: 12, brand: 17, title: 14, name: 40, pct: 50, quote: 22, qlh: 29, chipH: 28, chipF: 17, seal: 66, radarR: 46, labelF: 12, qr: 62,  emblem: 230 },
+    '9:16': { H: 1334, pad: 22, brand: 25, title: 19, name: 62, pct: 84, quote: 33, qlh: 45, chipH: 40, chipF: 23, seal: 116, radarR: 80, labelF: 19, qr: 100, emblem: 360 }
   };
   const C = CFG[ratio] || CFG['3:4'];
   const W = 750, H = C.H;
@@ -1089,10 +1089,10 @@ function drawShareCard(canvas, fig, pct, scores, ratio) {
   y = sealTop + C.seal;
 
   /* 3. 称号 + 姓名 */
-  const titleBase = y + C.title + (ratio === '1:1' ? 12 : 18);
+  const titleBase = y + C.title + (ratio === '1:1' ? 14 : 20);
   T('当 代 · ' + fig.tags[0] + ' 型', C.title, accent, titleBase, '500');
   y = titleBase;
-  const nameBase = y + C.name + (ratio === '1:1' ? 6 : 10);
+  const nameBase = y + C.name + (ratio === '1:1' ? 10 : 16);
   T(fig.name, C.name, P.ink, nameBase, '700');
   y = nameBase;
 
