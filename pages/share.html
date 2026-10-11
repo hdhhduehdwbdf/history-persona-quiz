@@ -59,7 +59,7 @@
 <script src="../core.js"></script>
 <script>
 ensureAnswers();
-const fig = Store.getFigure(Store.data.matchId) || FIGURES[0];
+const fig = Store.getFigure(Store.data.matchId) || Store.pool()[0];
 const pct = Store.data.matchPct || 88;
 const scores = Store.data.scores || Store.calcScores();
 const sorted = Store.topDims();

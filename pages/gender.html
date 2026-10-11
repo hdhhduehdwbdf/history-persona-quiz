@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>选择你的版本</title>
+<link rel="stylesheet" href="../css/common.css">
+</head>
+<body>
+<div class="phone">
+  <div class="fade-in" style="padding:56px 24px 24px;text-align:center;">
+    <div class="seal" style="width:64px;height:64px;font-size:26px;margin:0 auto 18px;">选</div>
+    <h1 style="margin:0 0 8px;font-size:22px;">你想和谁对话？</h1>
+    <p class="tiny" style="margin:0;">选择你的版本，匹配将只在对应人物中进行</p>
+  </div>
+
+  <div class="fade-in" style="padding:8px 20px;">
+    <div class="card" style="padding:22px 20px;margin-bottom:14px;cursor:pointer;" onclick="choose('男')">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="width:52px;height:52px;border-radius:50%;background:var(--primary-soft);display:flex;align-items:center;justify-content:center;font-size:24px;">♂</div>
+        <div>
+          <div style="font-size:17px;font-weight:600;">男生版</div>
+          <p class="tiny" style="margin:4px 0 0;">秦始皇 · 孔子 · 拿破仑 · 爱因斯坦 等 10 位</p>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="padding:22px 20px;margin-bottom:14px;cursor:pointer;" onclick="choose('女')">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="width:52px;height:52px;border-radius:50%;background:var(--primary-soft);display:flex;align-items:center;justify-content:center;font-size:24px;">♀</div>
+        <div>
+          <div style="font-size:17px;font-weight:600;">女生版</div>
+          <p class="tiny" style="margin:4px 0 0;">武则天 · 李清照 · 居里夫人 · 圣女贞德 等 10 位</p>
+        </div>
+      </div>
+    </div>
+    <p class="tiny" style="text-align:center;margin-top:12px;">选择后可随时返回重新选择（将重置作答）</p>
+  </div>
+</div>
+<script src="../core.js"></script>
+<script>
+Store.load();
+function choose(g) {
+  Store.setGender(g);
+  go('quiz.html');
+}
+</script>
+</body>
+</html>
