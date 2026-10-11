@@ -14,8 +14,9 @@
   --green: #4A7A5A;
   --radius: 12px;
   --radius-sm: 8px;
-  /* 底栏高度：修复报告页底部内容被固定底栏遮挡 */
-  --bar-h: 116px;
+  /* 底栏预留高度：固定底栏实测 111px（两行按钮），再留 25px 呼吸空间，系统字体放大导致底栏多一行时也不遮挡；.phone 的 padding-bottom
+     会同步叠加 env(safe-area-inset-bottom)，所以 iPhone 底栏加高时留白同步加高，两者不会互相遮挡 */
+  --bar-h: 136px;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 /* 用 min-height 而非 height：height:100% 会把 .phone 压成视口高度，
