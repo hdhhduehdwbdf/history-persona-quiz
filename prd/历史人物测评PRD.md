@@ -36,7 +36,7 @@
 | 商业模式 | **完全免费**（`js/core.js` 的 `FREE_MODE = true` 一行开关可切回 0.99 元付费形态） |
 | 题库 | 24 道情景题，每选项含八维权重 |
 | 人物库 | **20 位中外历史人物**（中国 10 位 + 国外 10 位），每人 15 个完整字段 |
-| 页面链路 | index → landing（首页）→ quiz（答题）→ result（结果）→ report（报告）→ share（分享卡片） |
+| 页面链路 | index → landing（首页）→ quiz（答题）→ report（报告）→ share（分享卡片） |
 | 部署 | CloudStudio 公网链接，「改完即上线」约定（2026-09-30 确认） |
 | 代码托管 | GitHub 私有仓库 `hdhhduehdwbdf/history-persona-quiz`（2026-10-01 推送） |
 

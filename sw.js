@@ -1,11 +1,10 @@
-const CACHE_NAME = 'hpq-v4';
+const CACHE_NAME = 'hpq-v5';
 const PRECACHE = [
   '/',
   '/pages/landing',
   '/pages/gender',
   '/pages/quiz',
   '/pages/report',
-  '/pages/result',
   '/pages/share',
   '/js/core.js',
   '/css/common.css',

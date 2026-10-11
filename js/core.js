@@ -1000,9 +1000,19 @@ const FIG_STYLE = {
   yanying: { em: '礼', a: '#5A7A6B', s: '#E8F0EC' }
 };
 
-/* 真实二维码（同源图片，不污染 canvas，可正常导出） */
+/* 真实二维码：内联 data URI，零网络请求，首帧即可绘制（同源数据不污染 canvas，可正常导出） */
+const QR_DATA = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAYAAAD0eNT6AAAAAklEQVR4AewaftIAAAwpSURBVO3BUY4dgY0EsJIw979yrX+NBAimMdu2n0hOfwkAcMoGADhnAwCcswEAztkAAOdsAIBzNgDAORsA4JwNAHDOBgA4ZwMAnLMBAM7ZAADnbACAczYAwDkbAOCcDQBwzgYAOGcDAJyzAQDO2QAA52wAgHM2AMA5GwDgnA0AcM4GADhnAwCcswEAztkAAOdsAIBzNgDAORsA4JwNAHDOBgA4ZwMAnLMBAM7ZAADnbACAczYAwDkbAOCcDQBwzgYAOGcDAJyzAQDO2QAA52wAgHM2AMA5GwDgnA0AcM4GADhnAwCcswEAztkAAOdsAIBzNgDAORsA4JyvfLiZCX9W27xlZvJE2zwxM3lT2/ztZiZPtM0TM5O/Xds8MTPhz2qbT7UBAM7ZAADnbACAczYAwDkbAOCcDQBwzgYAOGcDAJyzAQDO2QAA52wAgHM2AMA5GwDgnK/wX7UNv5uZfKqZyRNt8y+Ymbylbf4FbfOp2obfzUz43QYAOGcDAJyzAQDO2QAA52wAgHM2AMA5GwDgnA0AcM4GADhnAwCcswEAztkAAOdsAIBzvsKPmpn87drmXzAzeUvb8DNmJk+0zRNt88TM5C1t8y+Ymfzt2oafsQEAztkAAOdsAIBzNgDAORsA4JwNAHDOBgA4ZwMAnLMBAM7ZAADnbACAczYAwDlfAR6bmTzRNk/MTP52bfPEzORf0DbwCTYAwDkbAOCcDQBwzgYAOGcDAJyzAQDO2QAA52wAgHM2AMA5GwDgnA0AcM4GADhnAwCc8xXgsbZ5YmbyRNs8MTP5rrZ5YmbyyWYm39U28LfZAADnbACAczYAwDkbAOCcDQBwzgYAOGcDAJyzAQDO2QAA52wAgHM2AMA5GwDgnA0AcM5X+FFtA/9L2zwxM3nLzOSJtvlkM5NP1TbcsQEAztkAAOdsAIBzNgDAORsA4JwNAHDOBgA4ZwMAnLMBAM7ZAADnbACAczYAwDkbAOCcr/BfzUz497TNEzOTJ9rmiZnJE23zxMzku9rmiZnJE23zxMzkibb5VDMT+F82AMA5GwDgnA0AcM4GADhnAwCcswEAztkAAOdsAIBzNgDAORsA4JwNAHDOBgA4ZwMAnPOVD9c28P9lZvIvaJtP1TZPzEz+dm0D/182AMA5GwDgnA0AcM4GADhnAwCcswEAztkAAOdsAIBzNgDAORsA4JwNAHDOBgA4ZwMAnPOVDzczeaJtnpiZ8Lu2eaJt3tI2T8xM+F3bPDEzeaJt3tQ2b5mZ8Lu24WdsAIBzNgDAORsA4JwNAHDOBgA4ZwMAnLMBAM7ZAADnbACAczYAwDkbAOCcDQBwzlf4r2YmT7TNd81M3tQ2/4KZyXe1zRMzkyfa5k0zkyfa5m/XNv+CmQm/a5u/3czkibb5VBsA4JwNAHDOBgA4ZwMAnLMBAM7ZAADnbACAczYAwDkbAOCcDQBwzgYAOGcDAJyzAQDOmf6SDzYz+du1zRMzE/6stnliZsLv2uaJmckTbfPEzOS72uaJmckTbfPEzOSJtuHfswEAztkAAOdsAIBzNgDAORsA4JwNAHDOBgA4ZwMAnLMBAM7ZAADnbACAczYAwDkbAOCc6S/hj5qZvKlt3jQzeUvbPDEzeaJt3jQzeaJt+N3M5Im2ecvM5JO1zXfNTJ5oG363AQDO2QAA52wAgHM2AMA5GwDgnA0AcM4GADhnAwCcswEAztkAAOdsAIBzNgDAORsA4JzpL/lgM5Mn2uYtM5Mn2uaJmcmb2uaJmclb2uZNM5Mn2uaJmcmnaps3zUy+q23eNDN5om2emJm8pW34GRsA4JwNAHDOBgA4ZwMAnLMBAM7ZAADnbACAczYAwDkbAOCcDQBwzgYAOGcDAJyzAQDOmf4STpmZPNE2n2pm8qa2+VQzkyfa5k0zk7e0zRMzk39B2/ztZiZPtM2n2gAA52wAgHM2AMA5GwDgnA0AcM4GADhnAwCcswEAztkAAOdsAIBzNgDAORsA4JwNAHDO9Jd8sJnJm9rmLTOTJ9rmiZnJE23zxMzkLW3zxMzkTW3zlpnJm9rmU81MnmibJ2YmT7TNEzOTt7QNP2MDAJyzAQDO2QAA52wAgHM2AMA5GwDgnA0AcM4GADhnAwCcswEAztkAAOdsAIBzvsKPmpl8V9s80TZvapsnZiafqm2emJm8aWbC72YmT7TNW2YmT7TNEzOTJ9rmLTOTJ9qG320AgHM2AMA5GwDgnA0AcM4GADhnAwCcswEAztkAAOdsAIBzNgDAORsA4JwNAHDOBgA4Z/pLPtjM5Im2ecvM5Im2eWJmwp/VNn+7mckTbfPEzOSJtnnTzOS72uZNM5Mn2uaJmclb2oafsQEAztkAAOdsAIBzNgDAORsA4JwNAHDOBgA4ZwMAnLMBAM7ZAADnbACAczYAwDkbAOCcr/CjZiZvmZk80Tb8jJnJEzOTv13bPDEzedPM5FPNTN40M3mibZ6YmbxlZvJE23yqDQBwzgYAOGcDAJyzAQDO2QAA52wAgHM2AMA5GwDgnA0AcM4GADhnAwCcswEAztkAAOd8hR/VNt81M3mibd40M3mibZ6YmfDnzEze1DZPzEyeaJsnZibfNTPhz2obfrcBAM7ZAADnbACAczYAwDkbAOCcDQBwzgYAOGcDAJyzAQDO2QAA52wAgHM2AMA5GwDgnK/wo2Ym39U2T8xM3tQ2b2qbTzUzeVPbvGVm8qa2+du1Df+pbb5rZvJE2/C7DQBwzgYAOGcDAJyzAQDO2QAA52wAgHM2AMA5GwDgnA0AcM4GADhnAwCcswEAztkAAOd8hR/VNn+7tnliZvKmtvmumcmb2uZNbfPEzOQtbfPEzOSJtvnbzUw+Wds8MTN5y8zkibb5VBsA4JwNAHDOBgA4ZwMAnLMBAM7ZAADnbACAczYAwDkbAOCcDQBwzgYAOGcDAJzzlQ/XNp+qbd7UNm+ambylbZ6YmfwL2uYtMxN+1zb/gpnJEzMT/j0bAOCcDQBwzgYAOGcDAJyzAQDO2QAA52wAgHM2AMA5GwDgnA0AcM4GADhnAwCcswEAzvnKh5uZ8Ge1zRNt810zkydmJvxuZvIvmJl8qpnJE23zqdqGn7EBAM7ZAADnbACAczYAwDkbAOCcDQBwzgYAOGcDAJyzAQDO2QAA52wAgHM2AMA5GwDgnK/wX7UNv5uZvGlm8l1t88TM5Im2+RfMTN7SNm+amXyqtvkXtM1bZiZvaptPtQEAztkAAOdsAIBzNgDAORsA4JwNAHDOBgA4ZwMAnLMBAM7ZAADnbACAczYAwDkbAOCcr/CjZiZ/u7bhz5qZPNE2T7TNd81M3jQzeVPbPDEz+a6ZCf9pZvJdbcPP2AAA52wAgHM2AMA5GwDgnA0AcM4GADhnAwCcswEAztkAAOdsAIBzNgDAORsA4JwNAHDOV+CDzEz4TzOT72qbJ2Ymn6xtvmtm8kTb/AtmJm+ZmbypbT7VBgA4ZwMAnLMBAM7ZAADnbACAczYAwDkbAOCcDQBwzgYAOGcDAJyzAQDO2QAA52wAgHO+AvBfzEyeaJsnZiZPtM2nmpnwM9qG320AgHM2AMA5GwDgnA0AcM4GADhnAwCcswEAztkAAOdsAIBzNgDAORsA4JwNAHDOV/hRbcPPaJvvmpm8aWbyRNu8qW2+a2byprZ5Ymbyt2ubJ2YmT7TNEzOTN7XNd81M+BkbAOCcDQBwzgYAOGcDAJyzAQDO2QAA52wAgHM2AMA5GwDgnA0AcM4GADhnAwCcswEAzpn+kg82M+HPapsnZibwv7TNEzOTJ9qGnzEz+a624WdsAIBzNgDAORsA4JwNAHDOBgA4ZwMAnLMBAM7ZAADnbACAczYAwDkbAOCcDQBwzgYAOGf6SwCAUzYAwDkbAOCcDQBwzgYAOGcDAJyzAQDO2QAA52wAgHM2AMA5GwDgnA0AcM4GADhnAwCcswEAztkAAOdsAIBzNgDAORsA4JwNAHDOBgA4ZwMAnLMBAM7ZAADnbACAczYAwDkbAOCcDQBwzgYAOGcDAJyzAQDO2QAA52wAgHM2AMA5GwDgnA0AcM4GADhnAwCcswEAztkAAOdsAIBzNgDAORsA4JwNAHDOBgA4ZwMAnLMBAM7ZAADnbACAczYAwDkbAOCcDQBwzgYAOGcDAJyzAQDO+T8g7TgVhTTjJQAAAABJRU5ErkJggg==';
 const QR_IMG = new Image();
-QR_IMG.src = (typeof location !== 'undefined' && location.pathname.indexOf('/pages/') >= 0) ? '../assets/qr.png' : 'assets/qr.png';
+QR_IMG.src = QR_DATA;
+/* 二维码就绪回调：已解码立即执行，否则等 load / error，失败也放行 */
+function whenQrReady(cb) {
+  if (QR_IMG.complete && QR_IMG.naturalWidth > 0) { cb(); return; }
+  let done = false;
+  const fire = () => { if (done) return; done = true; cb(); };
+  QR_IMG.addEventListener('load', fire);
+  QR_IMG.addEventListener('error', fire);
+  if (QR_IMG.decode) QR_IMG.decode().then(fire).catch(fire);
+}
 
 function drawQr(ctx, x, y, size, seed) {
   rr(ctx, x - 6, y - 6, size + 12, size + 12, 10);
@@ -1167,7 +1177,7 @@ function drawShareCard(canvas, fig, pct, scores, ratio) {
   const tx = 78 + qrSize + (ratio === '1:1' ? 20 : 26);
   T('扫码测测你像谁', ratio === '1:1' ? 22 : 27, P.ink, qrTop + (ratio === '1:1' ? 26 : 32), '600', 'left', tx);
   T('history-persona-quiz.pages.dev', ratio === '1:1' ? 15 : 18, accent, qrTop + (ratio === '1:1' ? 48 : 60), '500', 'left', tx);
-  if (ratio !== '1:1') T('24 道情景题 · 完全免费 · 手机即开', 17, P.ink3, qrTop + 84, '400', 'left', tx);
+  if (ratio !== '1:1') T('完全免费 · 手机即开 · 扫码即测', 17, P.ink3, qrTop + 84, '400', 'left', tx);
   T('趣味心理测试 · 非命理预测', ratio === '1:1' ? 13 : 15, P.ink3, H - inset - 10);
 
   window.__shareLayout = { ratio, W, H, plan };
