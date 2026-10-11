@@ -56,6 +56,7 @@ const pct = Store.data.matchPct || 88;
 const scores = Store.data.scores || Store.calcScores();
 const sorted = Store.topDims();
 const top1 = sorted[0], top2 = sorted[1], weak1 = sorted[7], weak2 = sorted[6];
+const pronoun = fig.gender === '女' ? '她' : '他';
 
 function keyAnswer() {
   for (let i = 0; i < QUESTIONS.length; i++) {
@@ -130,7 +131,7 @@ function renderReport() {
     sec('一 · 人物匹配详情',
       '<p style="font-size:14px;">' + fig.intro + '</p>' +
       '<div class="divider"></div>' +
-      '<p class="muted" style="font-size:13px;">为什么是你：你在<b style="color:var(--ink);">' + top1 + '</b>与<b style="color:var(--ink);">' + top2 + '</b>两个维度上显著高于均值（' + scores[top1] + ' / ' + scores[top2] + ' 分），与' + fig.name + '的核心人格轴同构；而你的<b style="color:var(--ink);">' + weak1 + '</b>（' + scores[weak1] + ' 分）也正是他早年的短板——他是先补齐了它，才成就后来的自己。</p>') +
+      '<p class="muted" style="font-size:13px;">为什么是你：你在<b style="color:var(--ink);">' + top1 + '</b>与<b style="color:var(--ink);">' + top2 + '</b>两个维度上显著高于均值（' + scores[top1] + ' / ' + scores[top2] + ' 分），与' + fig.name + '的核心人格轴同构；而你的<b style="color:var(--ink);">' + weak1 + '</b>（' + scores[weak1] + ' 分）也正是' + pronoun + '早年的短板——' + pronoun + '是先补齐了它，才成就后来的自己。</p>') +
 
     sec('二 · 八维能力雷达图',
       '<div style="text-align:center;"><canvas id="radar"></canvas></div>' +
