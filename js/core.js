@@ -805,6 +805,7 @@ function ensureAnswers() {
 
 /* ---------- Canvas：八维雷达图 ---------- */
 function drawRadar(canvas, size, userScores, figScores) {
+  if (Array.isArray(figScores)) figScores = Object.fromEntries(DIMS.map((d, i) => [d, figScores[i] || 0]));
   const dpr = window.devicePixelRatio || 1;
   canvas.width = size * dpr; canvas.height = size * dpr;
   canvas.style.width = size + 'px'; canvas.style.height = size + 'px';
