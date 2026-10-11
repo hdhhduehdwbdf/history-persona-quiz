@@ -847,7 +847,6 @@ function drawRadar(canvas, size, userScores, figScores) {
     ctx.setLineDash([]);
     ctx.fillStyle = fill; ctx.fill();
   };
-  poly(figScores, 'rgba(156,146,136,0.9)', 'rgba(156,146,136,0.10)', [5, 4]);
   poly(userScores, '#B03A2E', 'rgba(176,58,46,0.14)');
   for (let i = 0; i < n; i++) {
     const d = DIMS[i];
