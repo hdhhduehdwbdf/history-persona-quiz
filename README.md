@@ -6,18 +6,18 @@
 </p>
 
 <p align="center">
-  <a href="https://history-persona-quiz.netlify.app">
-    <img alt="在线体验" src="https://img.shields.io/badge/🚀 在线体验-history--persona--quiz-B03A2E?style=for-the-badge&logo=netlify&logoColor=white">
+  <a href="https://history-persona-quiz.pages.dev">
+    <img alt="在线体验" src="https://img.shields.io/badge/🚀 在线体验-history--persona--quiz-B03A2E?style=for-the-badge&logo=cloudflare&logoColor=white">
   </a>
 </p>
 
 <p align="center">
-  <a href="https://history-persona-quiz.netlify.app"><strong>👉 点击进入 · 手机电脑均可直接游玩 👈</strong></a><br>
+  <a href="https://history-persona-quiz.pages.dev"><strong>👉 点击进入 · 手机电脑均可直接游玩 👈</strong></a><br>
   <sub>免登录 · 零安装 · 数据仅存本地浏览器 · 全功能免费</sub>
 </p>
 
 <p align="center">
-  <a href="https://history-persona-quiz.netlify.app"><img alt="在线测试" src="https://img.shields.io/badge/在线测试-history--persona--quiz-B03A2E?style=flat-square"></a>
+  <a href="https://history-persona-quiz.pages.dev"><img alt="在线测试" src="https://img.shields.io/badge/在线测试-history--persona--quiz-B03A2E?style=flat-square"></a>
   <img alt="人物数" src="https://img.shields.io/badge/历史人物-28 位-8B4513?style=flat-square">
   <img alt="题目数" src="https://img.shields.io/badge/古风情景题-24 道-B03A2E?style=flat-square">
   <img alt="维度" src="https://img.shields.io/badge/人格维度-8 维-A88132?style=flat-square">

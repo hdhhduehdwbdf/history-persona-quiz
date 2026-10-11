@@ -1160,7 +1160,7 @@ function drawShareCard(canvas, fig, pct, scores, ratio) {
   plan.push({ n: 'qr', x1: 72, x2: 78 + qrSize + 6, y1: qrTop - 6, y2: qrTop + qrSize + 6 });
   const tx = 78 + qrSize + (ratio === '1:1' ? 20 : 26);
   T('扫码测测你像谁', ratio === '1:1' ? 22 : 27, P.ink, qrTop + (ratio === '1:1' ? 26 : 32), '600', 'left', tx);
-  T('history-persona-quiz.netlify.app', ratio === '1:1' ? 15 : 18, accent, qrTop + (ratio === '1:1' ? 48 : 60), '500', 'left', tx);
+  T('history-persona-quiz.pages.dev', ratio === '1:1' ? 15 : 18, accent, qrTop + (ratio === '1:1' ? 48 : 60), '500', 'left', tx);
   if (ratio !== '1:1') T('24 道情景题 · 完全免费 · 手机即开', 17, P.ink3, qrTop + 84, '400', 'left', tx);
   T('趣味心理测试 · 非命理预测', ratio === '1:1' ? 13 : 15, P.ink3, H - inset - 10);
 
