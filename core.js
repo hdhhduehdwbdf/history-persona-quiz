@@ -709,8 +709,9 @@ const Store = {
   },
   getFigure(id) { return FIGURES.find(f => f.id === id) || null; },
   pool() {
-    const g = this.data.gender || '男';
-    return FIGURES.filter(f => f.gender === g);
+    const g = this.data.gender;
+    if (g === '男' || g === '女') return FIGURES.filter(f => f.gender === g);
+    return FIGURES;
   },
   setGender(g) {
     this.data.gender = g;
