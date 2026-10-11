@@ -26,12 +26,7 @@
   <img alt="语言" src="https://img.shields.io/badge/语言-简体中文-red?style=flat-square">
 </p>
 
-<p align="center">
-  <img src="_check/01-result.png" width="150" alt="结果页">
-  <img src="_check/02-report.png" width="150" alt="报告页">
-  <img src="_check/03-share.png" width="150" alt="分享卡片">
-  <img src="_check/04-share-1x1.png" width="150" alt="方形卡片">
-</p>
+
 
 ---
 
