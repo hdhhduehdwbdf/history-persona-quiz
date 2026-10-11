@@ -1,7 +1,7 @@
 {
   "name": "历史人物测验",
   "short_name": "历史人物测验",
-  "description": "历史人物性格匹配测评：二十位中西方名人，测出你最像谁",
+  "description": "历史人物性格匹配测评：二十八位中西方名人，测出你最像谁",
   "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",

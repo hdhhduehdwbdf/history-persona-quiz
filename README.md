@@ -22,7 +22,7 @@
   <img alt="题目数" src="https://img.shields.io/badge/古风情景题-24 道-B03A2E?style=flat-square">
   <img alt="维度" src="https://img.shields.io/badge/人格维度-8 维-A88132?style=flat-square">
   <img alt="题库" src="https://img.shields.io/badge/题库-古题版·六模块-4CAF50?style=flat-square">
-  <img alt="部署" src="https://img.shields.io/badge/部署-Netlify-00AD9F?style=flat-square">
+  <img alt="部署" src="https://img.shields.io/badge/部署-Cloudflare_Pages-F38020?style=flat-square">
   <img alt="语言" src="https://img.shields.io/badge/语言-简体中文-red?style=flat-square">
 </p>
 
@@ -118,4 +118,4 @@ pct = 100 − 标准化平均绝对差 × 38 + 确定性微扰
 | 状态管理 | 自研轻量 Store，基于 localStorage，支持进度恢复 |
 | 视觉系统 | 暖纸底 `#FAF6EF` + 朱红印章 `#B03A2E` + 赭金点缀 `#A88132` |
 | 无障碍 | 键盘焦点可见、`prefers-reduced-motion` 弱动效适配 |
-| 部署 | Netlify 自动部署（push 即上线） |
+| 部署 | Cloudflare Pages 自动部署（push 即上线） |
