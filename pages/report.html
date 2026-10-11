@@ -115,7 +115,6 @@ function renderReport() {
       '<h2 style="font-size:20px;">' + fig.name + ' · ' + fig.dynasty + '</h2>' +
       '<p style="color:var(--primary);font-weight:600;font-size:14px;margin-top:4px;">匹配度 ' + pct + '%</p>' +
       '<p style="font-size:13.5px;color:var(--gold);margin-top:8px;line-height:1.7;">「' + (fig.opener || '') + '」</p>' +
-      '<p class="tiny" style="margin-top:4px;">' + (FREE_MODE ? '当前开放使用 · 完整报告无需付费' : '订单号 ' + (Store.data.orderId || '—') + ' · 已解锁') + '</p>' +
     '</div>' +
 
     /* 人物概括：三句话提炼整体画像（新增板块） */
@@ -125,7 +124,6 @@ function renderReport() {
         '<p style="font-size:14px;line-height:1.8;margin-bottom:8px;">' +
         '<span style="display:inline-block;width:20px;height:20px;border-radius:50%;background:var(--primary);color:#fff;' +
         'font-size:11px;text-align:center;line-height:20px;margin-right:8px;vertical-align:middle;">' + (i + 1) + '</span>' + s + '</p>').join('') +
-      '<p class="tiny" style="margin-top:2px;">以上为整体画像的提炼，逐条依据见下方七章。</p>' +
     '</div>' +
 
     sec('一 · 人物匹配详情',
