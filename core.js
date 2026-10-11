@@ -1019,9 +1019,9 @@ function drawQr(ctx, x, y, size, seed) {
 /* 主绘制：ratio = '3:4' 小红书 | '1:1' 朋友圈 | '9:16' 视频/状态长图 */
 function drawShareCard(canvas, fig, pct, scores, ratio) {
   const CFG = {
-    '3:4':  { H: 1000, pad: 20, brand: 23, title: 25, name: 62, pct: 108, quote: 31, qlh: 42, chipH: 38, chipF: 22, seal: 112, radarR: 72, labelF: 19, qr: 92,  emblem: 320 },
-    '1:1':  { H: 750,  pad: 12, brand: 18, title: 19, name: 44, pct: 74,  quote: 23, qlh: 31, chipH: 30, chipF: 18, seal: 74,  radarR: 54, labelF: 13, qr: 66,  emblem: 230 },
-    '9:16': { H: 1334, pad: 24, brand: 26, title: 29, name: 70, pct: 122, quote: 35, qlh: 48, chipH: 42, chipF: 24, seal: 130, radarR: 92, labelF: 21, qr: 104, emblem: 360 }
+    '3:4':  { H: 1000, pad: 18, brand: 22, title: 22, name: 52, pct: 72, quote: 28, qlh: 38, chipH: 34, chipF: 20, seal: 94, radarR: 62, labelF: 17, qr: 88,  emblem: 320 },
+    '1:1':  { H: 750,  pad: 12, brand: 17, title: 18, name: 40, pct: 50, quote: 22, qlh: 29, chipH: 28, chipF: 17, seal: 66, radarR: 46, labelF: 12, qr: 62,  emblem: 230 },
+    '9:16': { H: 1334, pad: 22, brand: 25, title: 27, name: 62, pct: 84, quote: 33, qlh: 45, chipH: 40, chipF: 23, seal: 116, radarR: 80, labelF: 19, qr: 100, emblem: 360 }
   };
   const C = CFG[ratio] || CFG['3:4'];
   const W = 750, H = C.H;
@@ -1070,7 +1070,7 @@ function drawShareCard(canvas, fig, pct, scores, ratio) {
     ctx.fillText(str, px, baseline);
     const w = ctx.measureText(str).width;
     const x1 = align === 'left' ? px : (align === 'right' ? px - w : px - w / 2);
-    const box = { x1: x1, x2: x1 + w, y1: baseline - size * 0.86, y2: baseline + size * 0.18 };
+    const box = { x1: x1, x2: x1 + w, y1: baseline - size * 0.82, y2: baseline + size * 0.24 };
     plan.push(Object.assign({ n: str.slice(0, 8) }, box));
     return box;
   };
@@ -1097,35 +1097,42 @@ function drawShareCard(canvas, fig, pct, scores, ratio) {
   y = nameBase;
 
   /* 4. 匹配度主视觉 */
-  const lbSize = Math.round(C.pct * 0.18);
-  const lbBase = y + lbSize + (ratio === '1:1' ? 12 : 18);
-  T('八 维 人 格 匹 合 度', lbSize, P.ink3, lbBase);
-  const pctBase = lbBase + C.pct * 0.84;
+  const lbSize = Math.round(C.pct * 0.24);
+  const lbBase = y + lbSize + (ratio === '1:1' ? 14 : 22);
+  T('八 维 人 格 相 似 度', lbSize, P.ink3, lbBase);
+  const pctBase = lbBase + Math.round(lbSize * 0.7) + C.pct * 0.78;
   const pctBox = T(pct + '%', C.pct, accent, pctBase, '700');
-  pctBox.y1 = pctBase - C.pct * 0.72; plan[plan.length - 1].y1 = pctBox.y1;
+  pctBox.y1 = pctBase - C.pct * 0.76; plan[plan.length - 1].y1 = pctBox.y1;
   const ruleY = pctBase - C.pct * 0.33;
   ctx.strokeStyle = accent; ctx.globalAlpha = 0.35; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(pctBox.x1 - 96, ruleY); ctx.lineTo(pctBox.x1 - 26, ruleY); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(pctBox.x2 + 26, ruleY); ctx.lineTo(pctBox.x2 + 96, ruleY); ctx.stroke();
   ctx.globalAlpha = 1;
-  y = pctBox.y2 + (ratio === '1:1' ? 10 : 18);
+  y = pctBase + Math.round(C.pct * 0.18) + (ratio === '1:1' ? 14 : 24);
 
   /* 5. 金句：卡片的情绪中心 */
   ctx.strokeStyle = 'rgba(43,38,34,0.10)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(120, y + 12); ctx.lineTo(630, y + 12); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(120, y + 6); ctx.lineTo(630, y + 6); ctx.stroke();
   const qSize = C.quote, qlh = C.qlh;
   ctx.fillStyle = P.ink;
-  const qBox = wrapText(ctx, '「' + fig.quote + '」', 375, y + qSize + 22, 560, qlh, 'center');
-  plan.push({ n: 'quote', x1: 95, x2: 655, y1: y + 6, y2: qBox.bottom + qSize * 0.22 });
-  y = qBox.bottom + qSize * 0.22;
+  const qBox = wrapText(ctx, '「' + fig.quote + '」', 375, y + qSize + 30, 560, qlh, 'center');
+  plan.push({ n: 'quote', x1: 95, x2: 655, y1: y + 12, y2: qBox.bottom + qSize * 0.26 });
+  y = qBox.bottom + qSize * 0.5;
 
   /* 6. 标签行 */
-  const chipTop = y + (ratio === '1:1' ? 8 : 14);
+  const chipTop = y + (ratio === '1:1' ? 12 : 18);
   const chipRow = drawChipRow(ctx, [{ text: fig.dynasty, fg: accent, bg: accentSoft }]
     .concat(fig.tags.map(t => ({ text: t, fg: P.ink2, bg: 'rgba(43,38,34,0.055)' }))),
     chipTop + C.chipH / 2, C.chipH, C.chipF);
   plan.push({ n: 'chips', x1: chipRow.left - 4, x2: chipRow.right + 4, y1: chipTop, y2: chipTop + C.chipH });
   y = chipTop + C.chipH;
+
+  /* 6b. 最强 / 最弱（紧贴标签行下方，与页脚彻底解耦） */
+  const swSize = Math.round(C.labelF * 1.2);
+  const swBase = y + swSize + (ratio === '1:1' ? 12 : 16);
+  T('最强 · ' + strong, swSize, accent, swBase, '600', 'left', 122);
+  T('最弱 · ' + weak, swSize, P.ink3, swBase, '400', 'right', 628);
+  y = swBase + Math.round(swSize * 0.4);
 
   /* 7. 八维雷达图 + 最强 / 最弱 */
   const ornY = y + (ratio === '1:1' ? 14 : 24);
@@ -1133,7 +1140,7 @@ function drawShareCard(canvas, fig, pct, scores, ratio) {
   plan.push({ n: 'ornament', x1: 245, x2: 505, y1: ornY - 8, y2: ornY + 8 });
   const extent = C.radarR + C.labelF * 1.85 + 4;
   const gapAfterOrn = ratio === '1:1' ? 14 : 20;
-  const tagBlock = C.labelF * 2.6;
+  const tagBlock = 0;
   const maxExtent = Math.floor((footTop - ornY - gapAfterOrn - tagBlock) / 2);
   const R = Math.max(34, Math.min(C.radarR, maxExtent - C.labelF * 1.85 - 4));
   const extent2 = R + C.labelF * 1.85 + 4;
@@ -1142,10 +1149,7 @@ function drawShareCard(canvas, fig, pct, scores, ratio) {
   const radarBox = drawRadarShapeAccent(ctx, 375, radarCy, R, scores, C.labelF, ratio === '1:1' ? 2.5 : 3, accent);
   ctx.restore();
   plan.push({ n: 'radar', x1: 375 - extent2, x2: 375 + extent2, y1: radarCy - extent2, y2: radarCy + extent2 });
-  const tagBase = radarBox.bottom + (ratio === '1:1' ? 14 : 20);
-  T('最强 · ' + strong, Math.round(C.labelF * 1.15), accent, tagBase, '600');
-  T('最弱 · ' + weak, Math.round(C.labelF * 1.15), P.ink3, tagBase, '400', 'right', 375 + 210);
-  y = tagBase + C.labelF * 0.3;
+  y = radarBox.bottom;
 
   /* 8. 页脚：真实二维码 + 引导（底部锚定） */
   ctx.strokeStyle = 'rgba(43,38,34,0.10)'; ctx.lineWidth = 1;
