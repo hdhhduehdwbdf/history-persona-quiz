@@ -17,10 +17,12 @@
 </p>
 
 <p align="center">
-  <img alt="人物" src="https://img.shields.io/badge/历史人物-28 位-8B4513?style=flat-square">
-  <img alt="题目" src="https://img.shields.io/badge/情景题-24 道-B03A2E?style=flat-square">
+  <a href="https://history-persona-quiz.netlify.app"><img alt="在线测试" src="https://img.shields.io/badge/在线测试-history--persona--quiz-B03A2E?style=flat-square"></a>
+  <img alt="人物数" src="https://img.shields.io/badge/历史人物-28 位-8B4513?style=flat-square">
+  <img alt="题目数" src="https://img.shields.io/badge/古风情景题-24 道-B03A2E?style=flat-square">
   <img alt="维度" src="https://img.shields.io/badge/人格维度-8 维-A88132?style=flat-square">
-  <img alt="依赖" src="https://img.shields.io/badge/外部依赖-0-brightgreen?style=flat-square">
+  <img alt="题库" src="https://img.shields.io/badge/题库-古题版·六模块-4CAF50?style=flat-square">
+  <img alt="部署" src="https://img.shields.io/badge/部署-Netlify-00AD9F?style=flat-square">
   <img alt="语言" src="https://img.shields.io/badge/语言-简体中文-red?style=flat-square">
 </p>
 
@@ -42,17 +44,15 @@
 - [🧮 匹配引擎](#-匹配引擎)
 - [👑 人物图鉴](#-人物图鉴)
 - [🏗️ 技术架构](#️-技术架构)
-- [🚀 本地运行](#-本地运行)
-- [🗺️ 迭代路线](#️-迭代路线)
-- [License](#license)
 
 ---
 
 ## 🎯 这是什么
 
-「历史人物测验」是一个纯前端性格测评应用：回答 24 道贴近真实生活的两难情景题，系统会把你压缩成**八维人格向量**，与 28 位历史人物的基准画像做曼哈顿距离匹配，找出与你性格最接近的那一位——并生成**七章深度报告**与**可保存的分享卡片**。
+「历史人物测验」是一个纯前端性格测评应用：回答 24 道古风情景题（古代背景 + 大白话选项），系统会把你压缩成**八维人格向量**，与 28 位历史人物的基准画像做曼哈顿距离匹配，找出与你性格最接近的那一位——并生成**七章深度报告**与**可保存的分享卡片**。
 
 - 🀄 **人物选取参照王者荣耀英雄对应的历史原型**，普通用户认知零门槛
+- 📜 **古题版题库**：24 道题分六大模块（行动与变化 / 价值与人生 / 思考与表达 / 边界与担当 / 长期经营 / 判断与洞察），每模块 4 题
 - 👫 **男/女人物优先两种模式**，也可不限性别
 - 📊 每位人物 15 个完整字段：八维基准分、金句、梗化开场白、人格解读、盲点、风险提示、成长建议、三句话概括
 - 🎨 「宣纸 + 朱红印章」视觉体系，Canvas 手绘分享卡片（3:4 / 1:1 双比例）
@@ -65,7 +65,7 @@
 | 步骤 | 页面 | 做什么 |
 |---|---|---|
 | **1️⃣ 选范围** | `pages/gender.html` | 女性人物优先 / 男性人物优先 / 不限性别 |
-| **2️⃣ 答题** | `pages/quiz.html` | 24 道情景题（决策 / 人际 / 压力 / 自我 / 协作五大类） |
+| **2️⃣ 答题** | `pages/quiz.html` | 24 道古风情景题（行动与变化 / 价值与人生 / 思考与表达 / 边界与担当 / 长期经营 / 判断与洞察，六模块各 4 题） |
 | **3️⃣ 结果** | `pages/result.html` | 匹配人物 + 匹配度 + 八维雷达图 + 三句话读你 |
 | **4️⃣ 报告** | `pages/report.html` | 七章深度报告，逐人物人工撰写 |
 | **5️⃣ 分享** | `pages/share.html` | 生成双比例分享卡片，可保存相册 |
