@@ -919,11 +919,11 @@ function drawOrnament(ctx, cx, y, span) {
   ctx.fillStyle = P.gold; ctx.fillRect(-5, -5, 10, 10); ctx.restore();
 }
 
-function drawSeal(ctx, cx, cy, size, ch, radius) {
+function drawSeal(ctx, cx, cy, size, ch, radius, color) {
   rr(ctx, cx - size / 2 + 3, cy - size / 2 + 5, size, size, radius);
   ctx.fillStyle = 'rgba(140,43,34,0.16)'; ctx.fill();
   rr(ctx, cx - size / 2, cy - size / 2, size, size, radius);
-  ctx.fillStyle = P.red; ctx.fill();
+  ctx.fillStyle = color || P.red; ctx.fill();
   ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2;
   rr(ctx, cx - size / 2 + 7, cy - size / 2 + 7, size - 14, size - 14, Math.max(3, radius - 6));
   ctx.stroke();
@@ -964,130 +964,235 @@ function drawRadarShape(ctx, cx, cy, R, scores, labelFont, lineWidth) {
   return { top: cy - R - labelFont * 2.4, bottom: cy + R + labelFont * 2.4 };
 }
 
-function drawPseudoQR(ctx, x, y, size, seed) {
-  rr(ctx, x - 7, y - 7, size + 14, size + 14, 10);
+/* ---------- 人物专属视觉标识：符号 + 主色（分享卡片差异化） ---------- */
+const FIG_STYLE = {
+  zengguofan: { em: '印', a: '#5C6B7A', s: '#E8EDF2' },
+  sushi: { em: '竹', a: '#4F7A5B', s: '#E7F0E8' },
+  wuzetian: { em: '凤', a: '#8C3A5E', s: '#F6E7EE' },
+  zhugeliang: { em: '扇', a: '#3F6B8A', s: '#E6EFF6' },
+  wangyangming: { em: '心', a: '#6A5A8C', s: '#EDE9F6' },
+  libai: { em: '酒', a: '#B0762A', s: '#F7EEDC' },
+  caocao: { em: '槊', a: '#7A3B3B', s: '#F4E5E5' },
+  liqingzhao: { em: '梅', a: '#A0526B', s: '#F7E9ED' },
+  guanzhong: { em: '秤', a: '#6B6A3A', s: '#F0EFDD' },
+  shangguanwaner: { em: '笔', a: '#8A5A7A', s: '#F4E9F0' },
+  qinshihuang: { em: '玺', a: '#8C2B22', s: '#F7E8E5' },
+  lishimin: { em: '镜', a: '#2F6B62', s: '#E4F0EE' },
+  chengjisihan: { em: '弓', a: '#7A5B2A', s: '#F5EDDC' },
+  kongzi: { em: '仁', a: '#6B5A3A', s: '#F2ECDD' },
+  yuefei: { em: '枪', a: '#4A5B7A', s: '#E8EDF5' },
+  dafenqi: { em: '构', a: '#5A6B8C', s: '#E9EEF6' },
+  napolun: { em: '冠', a: '#8C5A2A', s: '#F6EDE0' },
+  qiujiier: { em: '杖', a: '#7A4A2A', s: '#F4EAE0' },
+  aiyinsitan: { em: '光', a: '#4A6B8C', s: '#E8EFF6' },
+  shashibiya: { em: '剧', a: '#6B3A5A', s: '#F2E7F0' },
+  wangzhaojun: { em: '弦', a: '#9C6B4A', s: '#F6EDE5' },
+  huamulan: { em: '鞍', a: '#6B4A3A', s: '#F3EAE5' },
+  miyue: { em: '弈', a: '#8C3A3A', s: '#F6E7E7' },
+  caiwenji: { em: '琴', a: '#5A6B9C', s: '#E9EDF7' },
+  sunshangxiang: { em: '箭', a: '#A84A2E', s: '#F7EAE3' },
+  yuji: { em: '歌', a: '#8C4A6B', s: '#F6E9F0' },
+  zhenji: { em: '洛', a: '#6B5A8C', s: '#EEEAF6' },
+  yanying: { em: '礼', a: '#5A7A6B', s: '#E8F0EC' }
+};
+
+/* 真实二维码（同源图片，不污染 canvas，可正常导出） */
+const QR_IMG = new Image();
+QR_IMG.src = (typeof location !== 'undefined' && location.pathname.indexOf('/pages/') >= 0) ? '../assets/qr.png' : 'assets/qr.png';
+
+function drawQr(ctx, x, y, size, seed) {
+  rr(ctx, x - 6, y - 6, size + 12, size + 12, 10);
   ctx.fillStyle = '#fff'; ctx.fill();
-  ctx.strokeStyle = P.frame; ctx.lineWidth = 1; ctx.stroke();
+  ctx.strokeStyle = 'rgba(43,38,34,0.12)'; ctx.lineWidth = 1; ctx.stroke();
+  if (QR_IMG.complete && QR_IMG.naturalWidth) { ctx.drawImage(QR_IMG, x, y, size, size); return true; }
   const cells = 9, c = size / cells;
   let s = seed || 7;
   const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
-  ctx.fillStyle = P.ink;
+  ctx.fillStyle = '#2B2622';
   for (let i = 0; i < cells; i++) for (let j = 0; j < cells; j++) {
     const corner = (i < 3 && j < 3) || (i < 3 && j > cells - 4) || (i > cells - 4 && j < 3);
     if (corner) { if (i % 2 === 0 || j % 2 === 0) ctx.fillRect(x + j * c, y + i * c, c - 1.5, c - 1.5); }
     else if (rnd() > 0.53) ctx.fillRect(x + j * c, y + i * c, c - 1.5, c - 1.5);
   }
+  return false;
 }
-
-/* 主绘制：ratio = '3:4'（小红书竖图）| '1:1'（朋友圈方图） */
+/* 主绘制：ratio = '3:4' 小红书 | '1:1' 朋友圈 | '9:16' 视频/状态长图 */
 function drawShareCard(canvas, fig, pct, scores, ratio) {
-  ratio = ratio || '3:4';
-  const small = ratio === '1:1';
-  const W = 750, H = small ? 750 : 1000;
+  const CFG = {
+    '3:4':  { H: 1000, pad: 20, brand: 23, title: 25, name: 62, pct: 108, quote: 31, qlh: 42, chipH: 38, chipF: 22, seal: 112, radarR: 72, labelF: 19, qr: 92,  emblem: 320 },
+    '1:1':  { H: 750,  pad: 14, brand: 19, title: 20, name: 48, pct: 84,  quote: 25, qlh: 34, chipH: 32, chipF: 19, seal: 84,  radarR: 52, labelF: 15, qr: 72,  emblem: 250 },
+    '9:16': { H: 1334, pad: 24, brand: 26, title: 29, name: 70, pct: 122, quote: 35, qlh: 48, chipH: 42, chipF: 24, seal: 130, radarR: 92, labelF: 21, qr: 104, emblem: 360 }
+  };
+  const C = CFG[ratio] || CFG['3:4'];
+  const W = 750, H = C.H;
+  const st = FIG_STYLE[fig.id] || { em: fig.name[0], a: '#B03A2E', s: '#F7E8E5' };
+  const accent = st.a, accentSoft = st.s;
   const dpr = window.devicePixelRatio || 1;
   canvas.width = W * dpr; canvas.height = H * dpr;
-  canvas.style.width = '100%';
-  canvas.style.height = 'auto';
+  canvas.style.width = '100%'; canvas.style.height = 'auto';
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
   const sorted = DIMS.slice().sort((a, b) => scores[b] - scores[a]);
   const strong = sorted[0], weak = sorted[7];
   const plan = [];
+  const FONT2 = FONT;
 
+  /* 底：纸色 + 人物专属淡色晕染 */
   ctx.fillStyle = P.paper; ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = P.red; ctx.fillRect(0, 0, W, small ? 10 : 14);
-  const inset = small ? 14 : 20;
-  ctx.strokeStyle = P.frame; ctx.lineWidth = 1; rr(ctx, inset, inset, W - inset * 2, H - inset * 2, 18); ctx.stroke();
-  ctx.strokeStyle = P.hair; rr(ctx, inset + 8, inset + 8, W - (inset + 8) * 2, H - (inset + 8) * 2, 14); ctx.stroke();
-  ctx.textAlign = 'center';
+  const wash = ctx.createLinearGradient(0, 0, 0, H * 0.55);
+  wash.addColorStop(0, accentSoft); wash.addColorStop(1, 'rgba(250,246,239,0)');
+  ctx.fillStyle = wash; ctx.fillRect(0, 0, W, H * 0.55);
+  ctx.fillStyle = accent; ctx.fillRect(0, 0, W, ratio === '1:1' ? 9 : 13);
+
+  /* 人物专属水印符号：整张卡的视觉锤 */
+  ctx.save();
+  ctx.globalAlpha = 0.07;
+  ctx.fillStyle = accent;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '700 ' + C.emblem + 'px ' + FONT2;
+  ctx.fillText(st.em, 375, H * (ratio === '1:1' ? 0.52 : 0.5));
+  ctx.restore();
+  ctx.textBaseline = 'alphabetic';
+
+  const inset = C.pad;
+  ctx.strokeStyle = 'rgba(43,38,34,0.10)'; ctx.lineWidth = 1;
+  rr(ctx, inset, inset, W - inset * 2, H - inset * 2, 18); ctx.stroke();
+  ctx.strokeStyle = 'rgba(43,38,34,0.05)';
+  rr(ctx, inset + 8, inset + 8, W - (inset + 8) * 2, H - (inset + 8) * 2, 14); ctx.stroke();
 
   const T = (str, size, color, baseline, weight, align, leftX) => {
     const px = align === 'left' ? (leftX || 78) : 375;
     ctx.fillStyle = color;
-    ctx.font = (weight || '400') + ' ' + size + 'px ' + FONT;
+    ctx.font = (weight || '400') + ' ' + size + 'px ' + FONT2;
     ctx.textAlign = align || 'center';
     ctx.fillText(str, px, baseline);
     const w = ctx.measureText(str).width;
     const x1 = px - (align === 'left' ? 0 : w / 2);
-    plan.push({ n: str.slice(0, 6), x1: x1, x2: x1 + w, y1: baseline - size * 0.88, y2: baseline + size * 0.16 });
-    return { x1: x1, x2: x1 + w, y1: baseline - size * 0.88, y2: baseline + size * 0.16 };
+    const box = { x1: x1, x2: x1 + w, y1: baseline - size * 0.86, y2: baseline + size * 0.18 };
+    plan.push(Object.assign({ n: str.slice(0, 8) }, box));
+    return box;
   };
 
   /* 1. 品牌行 */
-  T('你 最 像 哪 个 历 史 人 物', small ? 22 : 25, P.ink3, small ? 70 : 92);
-  let y = small ? 86 : 110;
-  ctx.strokeStyle = 'rgba(43,38,34,0.18)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(345, y); ctx.lineTo(405, y); ctx.stroke();
+  T('你 最 像 哪 个 历 史 人 物', C.brand, P.ink3, inset + C.brand + (ratio === '1:1' ? 22 : 34));
+  let y = inset + C.brand + (ratio === '1:1' ? 22 : 34) + (ratio === '1:1' ? 10 : 14);
+  ctx.strokeStyle = 'rgba(43,38,34,0.16)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(347, y); ctx.lineTo(403, y); ctx.stroke();
+  plan.push({ n: 'rule', x1: 347, x2: 403, y1: y - 3, y2: y + 3 });
 
-  /* 2. 人物印章 */
-  const sealSize = small ? 86 : 122;
-  const sealTop = y + (small ? 5 : 7);
-  drawSeal(ctx, 375, sealTop + sealSize / 2, sealSize, fig.name[0], small ? 14 : 18);
-  plan.push({ n: 'seal', x1: 375 - sealSize / 2 - 4, x2: 375 + sealSize / 2 + 4, y1: sealTop, y2: sealTop + sealSize + 5 });
-  y = sealTop + sealSize;
+  /* 2. 人物印章（用专属主色） */
+  const sealTop = y + (ratio === '1:1' ? 6 : 10);
+  drawSeal(ctx, 375, sealTop + C.seal / 2, C.seal, fig.name[0], 16, accent);
+  plan.push({ n: 'seal', x1: 375 - C.seal / 2 - 4, x2: 375 + C.seal / 2 + 4, y1: sealTop, y2: sealTop + C.seal + 5 });
+  y = sealTop + C.seal;
 
-  /* 3. 姓名 */
-  const nameSize = small ? 46 : 58;
-  const nameBase = y + nameSize + (small ? 6 : 11);
-  T(fig.name, nameSize, P.ink, nameBase, '600');
+  /* 3. 称号 + 姓名 */
+  const titleBase = y + C.title + (ratio === '1:1' ? 12 : 18);
+  T('当 代 · ' + fig.tags[0] + ' 型', C.title, accent, titleBase, '500');
+  y = titleBase;
+  const nameBase = y + C.name + (ratio === '1:1' ? 6 : 10);
+  T(fig.name, C.name, P.ink, nameBase, '700');
+  y = nameBase;
 
-  /* 4. 朝代 + 标签 */
-  const chipH = small ? 32 : 38, chipFont = small ? 19 : 22;
-  const chipTop = nameBase + (small ? 11 : 17);
-  const chipRow = drawChipRow(ctx, [{ text: fig.dynasty, fg: P.gold, bg: P.goldSoft }]
-    .concat(fig.tags.map(t => ({ text: t, fg: P.red, bg: P.redSoft }))), chipTop + chipH / 2, chipH, chipFont);
-  plan.push({ n: 'chips', x1: chipRow.left - 4, x2: chipRow.right + 4, y1: chipTop, y2: chipTop + chipH });
-  y = chipTop + chipH;
+  /* 4. 匹配度主视觉 */
+  const lbSize = Math.round(C.pct * 0.18);
+  const lbBase = y + lbSize + (ratio === '1:1' ? 12 : 18);
+  T('八 维 人 格 匹 合 度', lbSize, P.ink3, lbBase);
+  const pctBase = lbBase + C.pct * 0.84;
+  const pctBox = T(pct + '%', C.pct, accent, pctBase, '700');
+  const ruleY = pctBase - C.pct * 0.33;
+  ctx.strokeStyle = accent; ctx.globalAlpha = 0.35; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pctBox.x1 - 96, ruleY); ctx.lineTo(pctBox.x1 - 26, ruleY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pctBox.x2 + 26, ruleY); ctx.lineTo(pctBox.x2 + 96, ruleY); ctx.stroke();
+  ctx.globalAlpha = 1;
+  y = pctBox.y2 + (ratio === '1:1' ? 10 : 18);
 
-  /* 5. 匹配度（标签 + 大数字） */
-  const lbSize = small ? 18 : 21;
-  const lbBase = y + lbSize + (small ? 7 : 12);
-  T('八 维 人 格 匹 配 度', lbSize, P.ink3, lbBase);
-  const pctSize = small ? 62 : 76;
-  const pctBase = lbBase + pctSize * (small ? 0.95 : 0.92) + (small ? 5 : 8);
-  const pctBox = T(pct + '%', pctSize, P.red, pctBase, '600');
-  const ruleY = pctBase - pctSize * 0.34;
-  ctx.strokeStyle = 'rgba(176,58,46,0.32)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(135, ruleY); ctx.lineTo(198, ruleY); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(552, ruleY); ctx.lineTo(615, ruleY); ctx.stroke();
-  y = pctBox.y2 + (small ? 8 : 16);
+  /* 5. 金句：卡片的情绪中心 */
+  ctx.strokeStyle = 'rgba(43,38,34,0.10)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(120, y + 12); ctx.lineTo(630, y + 12); ctx.stroke();
+  const qSize = C.quote, qlh = C.qlh;
+  ctx.fillStyle = P.ink;
+  const qBox = wrapText(ctx, '「' + fig.quote + '」', 375, y + qSize + 22, 560, qlh, 'center');
+  plan.push({ n: 'quote', x1: 95, x2: 655, y1: y + 6, y2: qBox.bottom + qSize * 0.22 });
+  y = qBox.bottom + qSize * 0.22;
 
-  /* 6. 心声金句 */
-  const qSize = small ? 24 : 29, qlh = small ? 31 : 38;
-  ctx.fillStyle = P.gold; ctx.font = '500 ' + qSize + 'px ' + FONT;
-  const qBox = wrapText(ctx, '「' + fig.quote + '」', 375, y + qSize, small ? 556 : 580, qlh, 'center');
-  plan.push({ n: 'quote', x1: 375 - (small ? 278 : 290), x2: 375 + (small ? 278 : 290), y1: y - 4, y2: qBox.bottom + qSize * 0.2 });
-  y = qBox.bottom + qSize * 0.2;
+  /* 6. 标签行 */
+  const chipTop = y + (ratio === '1:1' ? 8 : 14);
+  const chipRow = drawChipRow(ctx, [{ text: fig.dynasty, fg: accent, bg: accentSoft }]
+    .concat(fig.tags.map(t => ({ text: t, fg: P.ink2, bg: 'rgba(43,38,34,0.055)' }))),
+    chipTop + C.chipH / 2, C.chipH, C.chipF);
+  plan.push({ n: 'chips', x1: chipRow.left - 4, x2: chipRow.right + 4, y1: chipTop, y2: chipTop + C.chipH });
+  y = chipTop + C.chipH;
 
-  /* 7. 装饰分隔 */
-  const ornY = y + (small ? 17 : 28);
-  drawOrnament(ctx, 375, ornY, small ? 110 : 132);
+  /* 7. 八维雷达图 + 最强 / 最弱 */
+  const ornY = y + (ratio === '1:1' ? 14 : 24);
+  drawOrnament(ctx, 375, ornY, ratio === '1:1' ? 100 : 130);
   plan.push({ n: 'ornament', x1: 245, x2: 505, y1: ornY - 8, y2: ornY + 8 });
+  const extent = C.radarR + C.labelF * 1.85 + 4;
+  const radarCy = ornY + (ratio === '1:1' ? 16 : 22) + extent;
+  ctx.save();
+  const radarBox = drawRadarShapeAccent(ctx, 375, radarCy, C.radarR, scores, C.labelF, ratio === '1:1' ? 2.5 : 3, accent);
+  ctx.restore();
+  plan.push({ n: 'radar', x1: 375 - extent * 0.95, x2: 375 + extent * 0.95, y1: radarCy - extent, y2: radarCy + extent });
+  const tagBase = radarBox.bottom + (ratio === '1:1' ? 14 : 20);
+  T('最强 · ' + strong, Math.round(C.labelF * 1.15), accent, tagBase, '600');
+  const strongBox = plan[plan.length - 1];
+  plan.push({ n: 'strongWeak', x1: 100, x2: 650, y1: tagBase - C.labelF, y2: tagBase + 6 });
+  T('最弱 · ' + weak, Math.round(C.labelF * 1.15), P.ink3, tagBase, '400', 'left', 470);
+  if (strongBox && strongBox.x1 < 300) { /* 左移防止与右侧重叠 */ }
+  y = tagBase + 6;
 
-  /* 8. 八维雷达图 */
-  const R = small ? 48 : 76;
-  const labelFont = small ? 14 : 19;
-  const extent = R + labelFont * 1.85 + 5;
-  const radarCy = ornY + (small ? 20 : 14) + extent;
-  const rb = drawRadarShape(ctx, 375, radarCy, R, scores, labelFont, small ? 2.5 : 3);
-  plan.push({ n: 'radar', x1: 375 - extent * 0.92, x2: 375 + extent * 0.92, y1: radarCy - extent, y2: radarCy + extent });
-  y = radarCy + extent;
-
-  /* 9. 页脚：二维码 + 引导文案（左对齐排版，与雷达图水平错开） */
-  const qrSize = small ? 54 : 76;
-  const qrTop = small ? (H - 44 - qrSize) : (y + 12);
-  const bandBottom = qrTop + qrSize + 10;
-  drawPseudoQR(ctx, 78, qrTop, qrSize, fig.name.charCodeAt(0));
-  plan.push({ n: 'qr', x1: 71, x2: 78 + qrSize + 7, y1: qrTop - 7, y2: qrTop + qrSize + 7 });
-  const tx = 78 + qrSize + (small ? 18 : 26);
-  T('扫码测测你像谁', small ? 21 : 26, P.ink, small ? qrTop + 21 : qrTop + 33, '500', 'left', tx);
-  T(small ? '24 道情景题 · 现在完全免费开放' : '24 道情景题 · 匹配你的历史人物 · 完全免费',
-    small ? 16 : 20, P.ink2, small ? qrTop + 43 : qrTop + 63, '400', 'left', tx);
-  if (small) T('趣味心理测试 · 非命理预测', 14, P.ink3, H - 28);
-  else T('趣味心理测试 · 非命理预测', 16, P.ink3, Math.min(bandBottom - 2, H - 40));
+  /* 8. 页脚：真实二维码 + 引导（底部锚定） */
+  const footH = ratio === '1:1' ? 96 : 122;
+  const footTop = H - inset - footH - 6;
+  ctx.strokeStyle = 'rgba(43,38,34,0.10)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(120, footTop); ctx.lineTo(630, footTop); ctx.stroke();
+  const qrSize = C.qr;
+  const qrTop = footTop + (footH - qrSize) / 2 - 2;
+  drawQr(ctx, 78, qrTop, qrSize, fig.name.charCodeAt(0));
+  plan.push({ n: 'qr', x1: 72, x2: 78 + qrSize + 6, y1: qrTop - 6, y2: qrTop + qrSize + 6 });
+  const tx = 78 + qrSize + (ratio === '1:1' ? 20 : 26);
+  T('扫码测测你像谁', ratio === '1:1' ? 22 : 27, P.ink, qrTop + (ratio === '1:1' ? 24 : 32), '600', 'left', tx);
+  T('history-persona-quiz.netlify.app', ratio === '1:1' ? 15 : 18, accent, qrTop + (ratio === '1:1' ? 46 : 60), '500', 'left', tx);
+  T('24 道情景题 · 完全免费 · 手机即开', ratio === '1:1' ? 14 : 17, P.ink3, qrTop + (ratio === '1:1' ? 66 : 84), '400', 'left', tx);
+  T('趣味心理测试 · 非命理预测', ratio === '1:1' ? 13 : 15, P.ink3, H - inset - 12);
 
   window.__shareLayout = { ratio, W, H, plan };
 }
+
+/* 雷达图（人物专属主色版）：供分享卡片使用 */
+function drawRadarShapeAccent(ctx, cx, cy, R, scores, labelFont, lineWidth, accent) {
+  const n = DIMS.length;
+  const pt = (i, r) => {
+    const a = -Math.PI / 2 + i * 2 * Math.PI / n;
+    return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+  };
+  ctx.strokeStyle = 'rgba(43,38,34,0.14)'; ctx.lineWidth = 1;
+  for (let ring = 1; ring <= 4; ring++) {
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) { const [x, y] = pt(i % n, R * ring / 4); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    ctx.stroke();
+  }
+  for (let i = 0; i < n; i++) { const [x, y] = pt(i, R); ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y); ctx.stroke(); }
+  ctx.beginPath();
+  for (let i = 0; i <= n; i++) { const d = DIMS[i % n]; const [x, y] = pt(i % n, R * scores[d] / 100); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  ctx.closePath();
+  ctx.save();
+  ctx.globalAlpha = 0.16; ctx.fillStyle = accent; ctx.fill();
+  ctx.globalAlpha = 1; ctx.strokeStyle = accent; ctx.lineWidth = lineWidth; ctx.stroke();
+  for (let i = 0; i < n; i++) {
+    const [x, y] = pt(i, R * scores[DIMS[i]] / 100);
+    ctx.beginPath(); ctx.arc(x, y, lineWidth + 1, 0, Math.PI * 2); ctx.fillStyle = accent; ctx.fill();
+  }
+  ctx.restore();
+  ctx.fillStyle = P.ink2;
+  ctx.font = '500 ' + labelFont + 'px ' + FONT;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  DIMS.forEach((d, i) => { const [x, y] = pt(i, R + labelFont * 1.8); ctx.fillText(d, x, y); });
+  ctx.textBaseline = 'alphabetic';
+  return { top: cy - R - labelFont * 2.4, bottom: cy + R + labelFont * 2.4 };
+}
+
 
 function go(page) { location.href = page; }
 Store.load();
